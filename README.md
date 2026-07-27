@@ -1,4 +1,71 @@
-# Switchboard
+# Switchboard — fork Bono2007
+
+> Fork personnel de [doctly/switchboard](https://github.com/doctly/switchboard).
+> Le reste de ce README décrit l'application telle que l'amont la documente ;
+> cette section décrit ce qui diffère ici.
+
+**Attention : le code de ce fork n'est pas sur `main`.** Cette branche est
+identique à l'amont. Tout le travail vit sur
+[`feature/remote-web-gauges`](https://github.com/Bono2007/switchboard/tree/feature/remote-web-gauges),
+et c'est de là qu'est construite la release.
+
+## Ce que ce fork ajoute
+
+**Statut des sessions par hooks.** L'amont devine l'activité d'une session en
+lisant le titre du terminal. Ici, Claude Code la signale lui-même via un hook
+installé dans `~/.claude/settings.json`, et le titre n'est plus qu'un repli.
+Voir [`docs/agent-status-hooks.md`](https://github.com/Bono2007/switchboard/blob/feature/remote-web-gauges/docs/agent-status-hooks.md).
+
+**Quatre pull requests amont intégrées** — #78 (sessions SSH distantes), #28
+(mode web), #72 (jauges de contexte et de quota dans la barre d'état), #58
+(bannière de sortie). Plus les correctifs d'intégration nécessaires pour
+qu'elles cohabitent. Voir [`docs/remote-web-gauges.md`](https://github.com/Bono2007/switchboard/blob/feature/remote-web-gauges/docs/remote-web-gauges.md).
+
+**Traduction française** de l'interface, suivant la langue du système.
+
+**Infobulles applicatives**, les `title` natifs ne s'affichant pas de façon
+fiable sous Chromium.
+
+**Onglet Plans réparé** — respect du réglage `plansDirectory` par projet, et
+découverte des plans du plugin superpowers (`docs/superpowers/plans/`).
+
+**Sélection de texte sous macOS** dans les sessions qui activent le suivi de
+souris. Seul changement proposé en amont, dans la
+[PR #81](https://github.com/doctly/switchboard/pull/81).
+
+## Installation
+
+**[Télécharger la dernière version](https://github.com/Bono2007/switchboard/releases/latest)**
+— macOS Apple Silicon uniquement.
+
+Le build n'est **ni signé par un identifiant Apple, ni notarisé**. Si Gatekeeper
+refuse de l'ouvrir : clic droit → Ouvrir.
+
+## Construire soi-même
+
+```bash
+git checkout feature/remote-web-gauges
+npm install
+npm run bundle:codemirror
+CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac dmg zip --arm64 \
+  -c.mac.notarize=false -c.publish.owner=Bono2007
+```
+
+Les deux dernières options ne sont **pas** dans `package.json`, volontairement :
+la branche doit rester proposable en amont, et une redirection du canal de mise
+à jour inscrite dans le dépôt en serait une mauvaise surprise.
+
+## Mises à jour et CI
+
+L'auto-updater du build pointe sur ce dépôt, jamais sur celui de l'amont —
+sinon la prochaine version de doctly écraserait silencieusement tout ce qui
+précède, `autoDownload` et `autoInstallOnAppQuit` étant tous deux actifs.
+
+GitHub Actions est **désactivé** sur ce fork : le workflow hérité exige les
+secrets de signature Apple de doctly et échoue sans eux. Les releases sont
+publiées à la main.
+
+---
 
 Your command center for Claude Code sessions.
 
@@ -61,6 +128,9 @@ Switchboard monitors all your sessions in the background and shows status indica
 
 ## Download
 
+_Sur ce fork, voir « Installation » plus haut. Les liens ci-dessous sont ceux de
+l'amont et ne contiennent aucun des ajouts listés au début._
+
 Grab the latest release for your platform:
 
 **[Download Switchboard](https://github.com/doctly/switchboard/releases/latest)**
@@ -112,6 +182,9 @@ Output goes to `dist/`.
 
 ## Releasing
 
+_Sur ce fork, Actions étant désactivé, ce flux ne s'applique pas : on construit
+en local puis on téléverse avec `gh release create`._
+
 Releases are driven by git tags:
 
 ```bash
@@ -129,6 +202,9 @@ Set `GH_TOKEN` in your environment (a GitHub personal access token with `repo` s
 
 ## Auto-Updates
 
+_Sur ce fork, le canal est ce dépôt et non celui de l'amont — voir « Mises à
+jour et CI » plus haut._
+
 The app uses `electron-updater` to check for updates from GitHub Releases on launch and every 4 hours. Updates are only checked in packaged builds (not during development). The flow:
 
 1. App auto-downloads updates in the background
@@ -136,6 +212,9 @@ The app uses `electron-updater` to check for updates from GitHub Releases on lau
 3. User can restart immediately or dismiss (installs on next quit)
 
 ## Code Signing
+
+_Sur ce fork, aucun certificat Apple n'est disponible : les builds sont signés
+en ad-hoc et non notarisés._
 
 For distribution, set these environment variables:
 
