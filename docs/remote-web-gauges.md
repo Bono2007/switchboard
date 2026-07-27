@@ -173,6 +173,28 @@ Two fixes were needed on top of #58 for it to help remote sessions at all:
 
 ---
 
+## French translation
+
+The settings panel and the dialogs follow the system language. Everything else stays in English.
+
+The renderer has no bundler, so `public/i18n.js` is a global `t()` plus a catalogue registered by `public/locales/fr.js`. **Keys are the English source strings**, which means an untranslated string renders as readable English rather than a blank or a raw key — the right trade-off for partial coverage. Placeholders are `{name}`, substituted from a second argument.
+
+Language comes from `navigator.language`, which Electron fills from the OS. `fr-CA` falls back to the `fr` catalogue when no exact regional match exists. Force one for testing:
+
+```js
+localStorage.setItem('lang', 'fr')   // or 'en'
+```
+
+Adding a language means one file under `public/locales/`, a `<script>` tag in `index.html`, and nothing else.
+
+### Scope, and why it stops there
+
+Translated: `settings-panel.js` and `dialogs.js` — 106 strings, the two text-dense screens. The rest of the shell is short and self-evident (Plans, Memory, Stats, Save), and the Electron menu is localised by macOS on its own since it uses `role:` entries.
+
+**The terminal stays in English**, because what it shows is Claude Code's output, not Switchboard's. Diffs, permission prompts and CLI errors are unaffected by any of this.
+
+---
+
 ## The Plans tab and `plansDirectory`
 
 Claude Code describes its own setting as *"Custom directory for plan files, relative to project root. If not set, defaults to `~/.claude/plans/`"*. So there is no single plans folder — each project can redirect elsewhere, and the shared directory is only the fallback.

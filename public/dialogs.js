@@ -285,11 +285,11 @@ async function showNewSessionDialog(project) {
   let dangerousSkip = effective.dangerouslySkipPermissions || false;
 
   const modes = [
-    { value: null, label: 'Default', desc: 'Prompt for all actions' },
-    { value: 'acceptEdits', label: 'Accept Edits', desc: 'Auto-accept file edits, prompt for others' },
-    { value: 'plan', label: 'Plan Mode', desc: 'Read-only exploration, no writes' },
-    { value: 'dontAsk', label: "Don't Ask", desc: 'Auto-deny tools not explicitly allowed' },
-    { value: 'bypassPermissions', label: 'Bypass', desc: 'Auto-accept all tool calls' },
+    { value: null, label: t("Default"), desc: t("Prompt for all actions") },
+    { value: 'acceptEdits', label: t("Accept Edits"), desc: t("Auto-accept file edits, prompt for others") },
+    { value: 'plan', label: t("Plan Mode"), desc: t("Read-only exploration, no writes") },
+    { value: 'dontAsk', label: "Don't Ask", desc: t("Auto-deny tools not explicitly allowed") },
+    { value: 'bypassPermissions', label: t("Bypass"), desc: t("Auto-accept all tool calls") },
   ];
 
   function renderModeGrid() {
@@ -297,7 +297,7 @@ async function showNewSessionDialog(project) {
       const isSelected = !dangerousSkip && selectedMode === m.value;
       return `<button class="permission-option${isSelected ? ' selected' : ''}" data-mode="${m.value}"><span class="perm-name">${m.label}</span><span class="perm-desc">${m.desc}</span></button>`;
     }).join('') +
-    `<button class="permission-option dangerous${dangerousSkip ? ' selected' : ''}" data-mode="dangerous-skip"><span class="perm-name">Dangerous Skip</span><span class="perm-desc">Skip all safety prompts (use with caution)</span></button>`;
+    `<button class="permission-option dangerous${dangerousSkip ? ' selected' : ''}" data-mode="dangerous-skip"><span class="perm-name">${t("Dangerous Skip")}</span><span class="perm-desc">${t("Skip all safety prompts (use with caution)")}</span></button>`;
   }
 
   const titleText = isRemote
@@ -308,23 +308,23 @@ async function showNewSessionDialog(project) {
     <h3>${titleText}</h3>
     <div class="settings-field settings-field-wide" id="nsd-remote-dir-field" style="display:${isRemote ? '' : 'none'}">
       <div class="settings-field-info">
-        <span class="settings-label">Remote Directory</span>
-        <div class="settings-description">Working directory on the remote host</div>
+        <span class="settings-label">${t("Remote Directory")}</span>
+        <div class="settings-description">${t("Working directory on the remote host")}</div>
       </div>
       <div class="settings-field-control folder-input-row">
         <input type="text" class="settings-input" id="nsd-remote-dir" placeholder="~/path/to/project" value="${escapeHtml(project.remotePath || '~')}">
-        <button class="add-project-browse-btn" id="nsd-remote-browse" type="button">Browse</button>
+        <button class="add-project-browse-btn" id="nsd-remote-browse" type="button">${t("Browse")}</button>
       </div>
     </div>
     <div class="settings-field">
-      <div class="settings-label">Permission Mode</div>
+      <div class="settings-label">${t("Permission Mode")}</div>
       <div class="permission-grid" id="nsd-mode-grid">${renderModeGrid()}</div>
     </div>
     <div id="nsd-local-only">
       <div class="settings-field">
         <div class="settings-field-info">
-          <span class="settings-label">Worktree</span>
-          <div class="settings-description">Run session in an isolated git worktree</div>
+          <span class="settings-label">${t("Worktree")}</span>
+          <div class="settings-description">${t("Run session in an isolated git worktree")}</div>
         </div>
         <div class="settings-field-control">
           <input type="text" class="settings-input" id="nsd-worktree-name" placeholder="name (optional)" value="${escapeHtml(effective.worktreeName || '')}" style="width:140px">
@@ -333,8 +333,8 @@ async function showNewSessionDialog(project) {
       </div>
       <div class="settings-field">
         <div class="settings-field-info">
-          <span class="settings-label">Chrome</span>
-          <div class="settings-description">Enable Chrome browser automation</div>
+          <span class="settings-label">${t("Chrome")}</span>
+          <div class="settings-description">${t("Enable Chrome browser automation")}</div>
         </div>
         <div class="settings-field-control">
           <label class="settings-toggle"><input type="checkbox" id="nsd-chrome" ${effective.chrome ? 'checked' : ''}><span class="settings-toggle-slider"></span></label>
@@ -343,8 +343,8 @@ async function showNewSessionDialog(project) {
     </div>
     <div class="settings-field settings-field-wide">
       <div class="settings-field-info">
-        <span class="settings-label">Pre-launch Command</span>
-        <div class="settings-description">Prepended to the claude command</div>
+        <span class="settings-label">${t("Pre-launch Command")}</span>
+        <div class="settings-description">${t("Prepended to the claude command")}</div>
       </div>
       <div class="settings-field-control">
         <input type="text" class="settings-input" id="nsd-pre-launch" placeholder="e.g. aws-vault exec profile --" value="${escapeHtml(effective.preLaunchCmd || '')}">
@@ -352,16 +352,16 @@ async function showNewSessionDialog(project) {
     </div>
     <div class="settings-field settings-field-wide">
       <div class="settings-field-info">
-        <span class="settings-label">Additional Directories</span>
-        <div class="settings-description">Extra directories to include (comma-separated)</div>
+        <span class="settings-label">${t("Additional Directories")}</span>
+        <div class="settings-description">${t("Extra directories to include (comma-separated)")}</div>
       </div>
       <div class="settings-field-control">
         <input type="text" class="settings-input" id="nsd-add-dirs" placeholder="/path/to/dir1, /path/to/dir2" value="${escapeHtml(effective.addDirs || '')}">
       </div>
     </div>
     <div class="new-session-actions">
-      <button class="new-session-cancel-btn">Cancel</button>
-      <button class="new-session-start-btn">Start</button>
+      <button class="new-session-cancel-btn">${t("Cancel")}</button>
+      <button class="new-session-start-btn">${t("Start")}</button>
     </div>
   `;
 
@@ -467,11 +467,11 @@ async function showResumeSessionDialog(session) {
   let dangerousSkip = effective.dangerouslySkipPermissions || false;
 
   const modes = [
-    { value: null, label: 'Default', desc: 'Prompt for all actions' },
-    { value: 'acceptEdits', label: 'Accept Edits', desc: 'Auto-accept file edits, prompt for others' },
-    { value: 'plan', label: 'Plan Mode', desc: 'Read-only exploration, no writes' },
-    { value: 'dontAsk', label: "Don't Ask", desc: 'Auto-deny tools not explicitly allowed' },
-    { value: 'bypassPermissions', label: 'Bypass', desc: 'Auto-accept all tool calls' },
+    { value: null, label: t("Default"), desc: t("Prompt for all actions") },
+    { value: 'acceptEdits', label: t("Accept Edits"), desc: t("Auto-accept file edits, prompt for others") },
+    { value: 'plan', label: t("Plan Mode"), desc: t("Read-only exploration, no writes") },
+    { value: 'dontAsk', label: "Don't Ask", desc: t("Auto-deny tools not explicitly allowed") },
+    { value: 'bypassPermissions', label: t("Bypass"), desc: t("Auto-accept all tool calls") },
   ];
 
   function renderModeGrid() {
@@ -479,7 +479,7 @@ async function showResumeSessionDialog(session) {
       const isSelected = !dangerousSkip && selectedMode === m.value;
       return `<button class="permission-option${isSelected ? ' selected' : ''}" data-mode="${m.value}"><span class="perm-name">${m.label}</span><span class="perm-desc">${m.desc}</span></button>`;
     }).join('') +
-    `<button class="permission-option dangerous${dangerousSkip ? ' selected' : ''}" data-mode="dangerous-skip"><span class="perm-name">Dangerous Skip</span><span class="perm-desc">Skip all safety prompts (use with caution)</span></button>`;
+    `<button class="permission-option dangerous${dangerousSkip ? ' selected' : ''}" data-mode="dangerous-skip"><span class="perm-name">${t("Dangerous Skip")}</span><span class="perm-desc">${t("Skip all safety prompts (use with caution)")}</span></button>`;
   }
 
   const sessionName = session.name || session.aiTitle || session.summary || session.sessionId.slice(0, 8);
@@ -487,13 +487,13 @@ async function showResumeSessionDialog(session) {
   dialog.innerHTML = `
     <h3>Resume Session — ${escapeHtml(sessionName)}</h3>
     <div class="settings-field">
-      <div class="settings-label">Permission Mode</div>
+      <div class="settings-label">${t("Permission Mode")}</div>
       <div class="permission-grid" id="rsd-mode-grid">${renderModeGrid()}</div>
     </div>
     <div class="settings-field">
       <div class="settings-field-info">
-        <span class="settings-label">Chrome</span>
-        <div class="settings-description">Enable Chrome browser automation</div>
+        <span class="settings-label">${t("Chrome")}</span>
+        <div class="settings-description">${t("Enable Chrome browser automation")}</div>
       </div>
       <div class="settings-field-control">
         <label class="settings-toggle"><input type="checkbox" id="rsd-chrome" ${effective.chrome ? 'checked' : ''}><span class="settings-toggle-slider"></span></label>
@@ -501,8 +501,8 @@ async function showResumeSessionDialog(session) {
     </div>
     <div class="settings-field settings-field-wide">
       <div class="settings-field-info">
-        <span class="settings-label">Pre-launch Command</span>
-        <div class="settings-description">Prepended to the claude command</div>
+        <span class="settings-label">${t("Pre-launch Command")}</span>
+        <div class="settings-description">${t("Prepended to the claude command")}</div>
       </div>
       <div class="settings-field-control">
         <input type="text" class="settings-input" id="rsd-pre-launch" placeholder="e.g. aws-vault exec profile --" value="${escapeHtml(effective.preLaunchCmd || '')}">
@@ -510,16 +510,16 @@ async function showResumeSessionDialog(session) {
     </div>
     <div class="settings-field settings-field-wide">
       <div class="settings-field-info">
-        <span class="settings-label">Additional Directories</span>
-        <div class="settings-description">Extra directories to include (comma-separated)</div>
+        <span class="settings-label">${t("Additional Directories")}</span>
+        <div class="settings-description">${t("Extra directories to include (comma-separated)")}</div>
       </div>
       <div class="settings-field-control">
         <input type="text" class="settings-input" id="rsd-add-dirs" placeholder="/path/to/dir1, /path/to/dir2" value="${escapeHtml(effective.addDirs || '')}">
       </div>
     </div>
     <div class="new-session-actions">
-      <button class="new-session-cancel-btn">Cancel</button>
-      <button class="new-session-start-btn">Resume</button>
+      <button class="new-session-cancel-btn">${t("Cancel")}</button>
+      <button class="new-session-start-btn">${t("Resume")}</button>
     </div>
   `;
 
@@ -603,11 +603,11 @@ function showAuthPrompt(host, p) {
     if (p.kind === 'hostkey') {
       d.innerHTML = `
         <h3>${title} — ${escapeHtml(host.label || host.id)}</h3>
-        <div class="remote-connect-hint">First time connecting to this host. Confirm the fingerprint to continue.</div>
+        <div class="remote-connect-hint">${t("First time connecting to this host. Confirm the fingerprint to continue.")}</div>
         <pre class="auth-fingerprint">${escapeHtml(p.text || '')}</pre>
         <div class="new-session-actions">
-          <button class="new-session-cancel-btn" id="ap-no">No</button>
-          <button class="new-session-start-btn" id="ap-yes">Yes, connect</button>
+          <button class="new-session-cancel-btn" id="ap-no">${t("No")}</button>
+          <button class="new-session-start-btn" id="ap-yes">${t("Yes, connect")}</button>
         </div>`;
       overlay.appendChild(d); document.body.appendChild(overlay);
       document.addEventListener('keydown', onKey);
@@ -625,8 +625,8 @@ function showAuthPrompt(host, p) {
         <input class="settings-input" id="ap-input" type="${masked ? 'password' : 'text'}" autocomplete="off" spellcheck="false" style="width:100%">
       </div></div>
       <div class="new-session-actions">
-        <button class="new-session-cancel-btn" id="ap-cancel">Cancel</button>
-        <button class="new-session-start-btn" id="ap-ok">OK</button>
+        <button class="new-session-cancel-btn" id="ap-cancel">${t("Cancel")}</button>
+        <button class="new-session-start-btn" id="ap-ok">${t("OK")}</button>
       </div>`;
     overlay.appendChild(d); document.body.appendChild(overlay);
     const inp = d.querySelector('#ap-input');
@@ -695,8 +695,8 @@ function connectRemoteHost(host) {
         <h3>Connect — ${escapeHtml(host.label || host.id)}</h3>
         <div class="remote-connect-msg err" style="margin-bottom:12px">${escapeHtml(msg)}</div>
         <div class="new-session-actions">
-          <button class="new-session-cancel-btn" id="ce-cancel">Cancel</button>
-          <button class="new-session-start-btn" id="ce-retry">Retry</button>
+          <button class="new-session-cancel-btn" id="ce-cancel">${t("Cancel")}</button>
+          <button class="new-session-start-btn" id="ce-retry">${t("Retry")}</button>
         </div>`;
       errModal.appendChild(d); document.body.appendChild(errModal);
       d.querySelector('#ce-cancel').onclick = () => finish(false);
@@ -724,7 +724,7 @@ function connectRemoteHost(host) {
           finish(true);
         } else {
           const lastLine = buffer.split('\n').map(s => s.trim()).filter(Boolean).slice(-1)[0] || '';
-          showError('Connection failed' + (lastLine ? ': ' + lastLine : ' (exit ' + code + ').'));
+          showError(t('Connection failed') + (lastLine ? ': ' + lastLine : ' (exit ' + code + ').'));
         }
       };
     }
@@ -745,13 +745,13 @@ function showRemoteDirBrowser(host, startPath) {
       <h3>Browse — ${escapeHtml(host.label || host.id)}</h3>
       <div class="folder-input-row">
         <input type="text" class="settings-input" id="rb-path" value="${escapeHtml(startPath || '~')}" autocomplete="off" spellcheck="false">
-        <button class="add-project-browse-btn" id="rb-go">Go</button>
+        <button class="add-project-browse-btn" id="rb-go">${t("Go")}</button>
       </div>
       <div class="remote-browser-list" id="rb-list"></div>
       <div class="remote-browser-msg" id="rb-msg"></div>
       <div class="new-session-actions">
-        <button class="new-session-cancel-btn" id="rb-cancel">Cancel</button>
-        <button class="new-session-start-btn" id="rb-select">Select this directory</button>
+        <button class="new-session-cancel-btn" id="rb-cancel">${t("Cancel")}</button>
+        <button class="new-session-start-btn" id="rb-select">${t("Select this directory")}</button>
       </div>`;
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
@@ -779,14 +779,14 @@ function showRemoteDirBrowser(host, startPath) {
       current = path;
       pathInput.value = path;
       msgEl.textContent = '';
-      listEl.innerHTML = '<div class="remote-browser-status">Loading…</div>';
+      listEl.innerHTML = '<div class="remote-browser-status">${t("Loading…")}</div>';
       let res;
       try { res = await window.api.remoteBrowse({ hostId: host.id, path }); }
-      catch (e) { listEl.innerHTML = ''; msgEl.textContent = 'Error: ' + e.message; return; }
+      catch (e) { listEl.innerHTML = ''; msgEl.textContent = t("Error: ") + e.message; return; }
       listEl.innerHTML = '';
       if (!res.ok) {
         if (res.needsAuth) {
-          msgEl.textContent = 'This host needs interactive login. Open a session to it once to authenticate, then try Browse again — or just type the path.';
+          msgEl.textContent = t("This host needs interactive login. Open a session to it once to authenticate, then try Browse again — or just type the path.");
         } else {
           msgEl.textContent = res.message || res.error || 'Could not list this directory.';
         }
@@ -794,20 +794,20 @@ function showRemoteDirBrowser(host, startPath) {
       }
       const up = document.createElement('div');
       up.className = 'remote-browser-item remote-browser-up';
-      up.textContent = '📂 ..';
+      up.textContent = "📂 ..";
       up.onclick = () => load(parentPath(current));
       listEl.appendChild(up);
       for (const d of res.dirs) {
         const it = document.createElement('div');
         it.className = 'remote-browser-item';
-        it.textContent = '📁 ' + d;
+        it.textContent = "📁 " + d;
         it.onclick = () => load(joinPath(current, d));
         listEl.appendChild(it);
       }
       if (!res.dirs.length) {
         const e = document.createElement('div');
         e.className = 'remote-browser-status';
-        e.textContent = '(no subdirectories)';
+        e.textContent = t("(no subdirectories)");
         listEl.appendChild(e);
       }
     }
@@ -831,16 +831,16 @@ function showAddHostDialog() {
     const d = document.createElement('div');
     d.className = 'new-session-dialog';
     d.innerHTML = `
-      <h3>Add SSH Host</h3>
-      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">Label</span></div><div class="settings-field-control"><input class="settings-input" id="ah-label" placeholder="my-server (optional)"></div></div>
-      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">User</span></div><div class="settings-field-control"><input class="settings-input" id="ah-user" placeholder="user (optional)"></div></div>
-      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">Host</span></div><div class="settings-field-control"><input class="settings-input" id="ah-host" placeholder="hostname or IP"></div></div>
-      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">Port</span></div><div class="settings-field-control"><input class="settings-input" id="ah-port" placeholder="22"></div></div>
-      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">Identity file</span></div><div class="settings-field-control"><input class="settings-input" id="ah-identity" placeholder="~/.ssh/id_ed25519 (optional)"></div></div>
+      <h3>${t("Add SSH Host")}</h3>
+      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">${t("Label")}</span></div><div class="settings-field-control"><input class="settings-input" id="ah-label" placeholder="my-server (optional)"></div></div>
+      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">${t("User")}</span></div><div class="settings-field-control"><input class="settings-input" id="ah-user" placeholder="user (optional)"></div></div>
+      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">${t("Host")}</span></div><div class="settings-field-control"><input class="settings-input" id="ah-host" placeholder="hostname or IP"></div></div>
+      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">${t("Port")}</span></div><div class="settings-field-control"><input class="settings-input" id="ah-port" placeholder="22"></div></div>
+      <div class="settings-field"><div class="settings-field-info"><span class="settings-label">${t("Identity file")}</span></div><div class="settings-field-control"><input class="settings-input" id="ah-identity" placeholder="~/.ssh/id_ed25519 (optional)"></div></div>
       <div class="settings-field">
         <div class="settings-field-info">
-          <span class="settings-label">Extra options</span>
-          <div class="settings-description">Extra <code>ssh -o</code> options for legacy/special hosts — leave blank for most. Click to add:</div>
+          <span class="settings-label">${t("Extra options")}</span>
+          <div class="settings-description">${t("Extra <code>ssh -o</code> options for legacy/special hosts — leave blank for most. Click to add:")}</div>
           <div class="ah-opt-chips">
             <button type="button" class="ah-chip" data-opt="HostKeyAlgorithms=+ssh-rsa">HostKeyAlgorithms=+ssh-rsa</button>
             <button type="button" class="ah-chip" data-opt="PubkeyAcceptedKeyTypes=+ssh-rsa">PubkeyAcceptedKeyTypes=+ssh-rsa</button>
@@ -853,8 +853,8 @@ function showAddHostDialog() {
       </div>
       <div class="remote-connect-msg" id="ah-err"></div>
       <div class="new-session-actions">
-        <button class="new-session-cancel-btn" id="ah-cancel">Cancel</button>
-        <button class="new-session-start-btn" id="ah-save">Save host</button>
+        <button class="new-session-cancel-btn" id="ah-cancel">${t("Cancel")}</button>
+        <button class="new-session-start-btn" id="ah-save">${t("Save host")}</button>
       </div>`;
     overlay.appendChild(d);
     document.body.appendChild(overlay);
@@ -908,45 +908,45 @@ async function showAddProjectDialog() {
   let remoteTargets = [];
   try { remoteTargets = await window.api.getRemoteTargets(); } catch {}
   const buildHostOptions = (targets) =>
-    (targets.length ? '' : '<option value="" disabled selected>(no hosts yet)</option>') +
+    (targets.length ? '' : '<option value="" disabled selected>${t("(no hosts yet)")}</option>') +
     targets.map(h => `<option value="${escapeHtml(h.id)}">${escapeHtml(h.label)}${h.source === 'config' ? ' (ssh config)' : ''}</option>`).join('') +
     '<option value="__add__">+ Add new host…</option>';
   const hostOptions = buildHostOptions(remoteTargets);
 
   dialog.innerHTML = `
-    <h3>Add Project</h3>
+    <h3>${t("Add Project")}</h3>
     <div class="add-project-tabs">
-      <button class="add-project-tab selected" data-tab="local">Local folder</button>
-      <button class="add-project-tab" data-tab="remote">Remote (SSH)</button>
+      <button class="add-project-tab selected" data-tab="local">${t("Local folder")}</button>
+      <button class="add-project-tab" data-tab="remote">${t("Remote (SSH)")}</button>
     </div>
     <div id="add-project-local">
-      <div class="add-project-hint">Select a folder to create a new project. To start a session in an existing project, use the + on its project header.</div>
+      <div class="add-project-hint">${t("Select a folder to create a new project. To start a session in an existing project, use the + on its project header.")}</div>
       <div class="folder-input-row">
         <input type="text" id="add-project-path" placeholder="/path/to/project" autocomplete="off" spellcheck="false">
-        <button class="add-project-browse-btn">Browse</button>
+        <button class="add-project-browse-btn">${t("Browse")}</button>
       </div>
     </div>
     <div id="add-project-remote" style="display:none">
-      <div class="add-project-hint">Choose an SSH host and a remote directory — or pick <strong>+ Add new host…</strong> to define one here. If the host needs a password, click <strong>Connect</strong> to log in once, then Browse.</div>
+      <div class="add-project-hint">${t("Choose an SSH host and a remote directory — or pick <strong>+ Add new host…</strong> to define one here. If the host needs a password, click <strong>Connect</strong> to log in once, then Browse.")}</div>
       <div class="settings-field">
-        <div class="settings-field-info"><span class="settings-label">Host</span></div>
+        <div class="settings-field-info"><span class="settings-label">${t("Host")}</span></div>
         <div class="settings-field-control folder-input-row">
           <select class="settings-select" id="add-remote-host">${hostOptions}</select>
-          <button class="add-project-browse-btn" id="add-remote-connect" type="button" title="Log in / verify the connection">Connect</button>
+          <button class="add-project-browse-btn" id="add-remote-connect" type="button" title="Log in / verify the connection">${t("Connect")}</button>
         </div>
       </div>
       <div class="settings-field">
-        <div class="settings-field-info"><span class="settings-label">Remote directory</span></div>
+        <div class="settings-field-info"><span class="settings-label">${t("Remote directory")}</span></div>
         <div class="settings-field-control folder-input-row">
           <input type="text" class="settings-input" id="add-remote-path" placeholder="~/path/to/project" value="~">
-          <button class="add-project-browse-btn" id="add-remote-browse" type="button">Browse</button>
+          <button class="add-project-browse-btn" id="add-remote-browse" type="button">${t("Browse")}</button>
         </div>
       </div>
     </div>
     <div class="add-project-error" id="add-project-error"></div>
     <div class="add-project-actions">
-      <button class="add-project-cancel-btn">Cancel</button>
-      <button class="add-project-add-btn">Add</button>
+      <button class="add-project-cancel-btn">${t("Cancel")}</button>
+      <button class="add-project-add-btn">${t("Add")}</button>
     </div>
   `;
 
@@ -981,9 +981,9 @@ async function showAddProjectDialog() {
     errorEl.style.display = 'none';
     if (tab === 'remote') {
       const hostSel = dialog.querySelector('#add-remote-host');
-      if (!hostSel) { showError('No SSH hosts configured. Add them in Settings → Remote Hosts.'); return; }
+      if (!hostSel) { showError(t('No SSH hosts configured. Add them in Settings → Remote Hosts.')); return; }
       const hostId = hostSel.value;
-      if (!hostId || hostId === '__add__') { showError('Select or add a host.'); return; }
+      if (!hostId || hostId === '__add__') { showError(t('Select or add a host.')); return; }
       const remotePath = dialog.querySelector('#add-remote-path').value.trim() || '~';
       const result = await window.api.addRemoteProject({ hostId, remotePath });
       if (result.error) { showError(result.error); return; }
@@ -995,7 +995,7 @@ async function showAddProjectDialog() {
       return;
     }
     const projectPath = pathInput.value.trim();
-    if (!projectPath) { showError('Please enter a folder path.'); return; }
+    if (!projectPath) { showError(t('Please enter a folder path.')); return; }
     const result = await window.api.addProject(projectPath);
     if (result.error) { showError(result.error); return; }
     close();
@@ -1031,7 +1031,7 @@ async function showAddProjectDialog() {
   const remoteBrowseBtn = dialog.querySelector('#add-remote-browse');
   if (remoteBrowseBtn) {
     remoteBrowseBtn.onclick = async () => {
-      if (!isRealHost()) { showError('Select or add a host first.'); return; }
+      if (!isRealHost()) { showError(t('Select or add a host first.')); return; }
       const hostSel = dialog.querySelector('#add-remote-host');
       const remotePathInput = dialog.querySelector('#add-remote-path');
       const t = remoteTargets.find(h => h.id === hostSel.value);
@@ -1048,17 +1048,17 @@ async function showAddProjectDialog() {
   const remoteConnectBtn = dialog.querySelector('#add-remote-connect');
   if (remoteConnectBtn) {
     remoteConnectBtn.onclick = async () => {
-      if (!isRealHost()) { showError('Select or add a host first.'); return; }
+      if (!isRealHost()) { showError(t('Select or add a host first.')); return; }
       const hostSel = dialog.querySelector('#add-remote-host');
       const t = remoteTargets.find(h => h.id === hostSel.value);
       const host = { id: hostSel.value, label: (t && t.label) || hostSel.value };
       const orig = remoteConnectBtn.textContent;
       remoteConnectBtn.disabled = true;
-      remoteConnectBtn.textContent = 'Connecting…';
+      remoteConnectBtn.textContent = t("Connecting…");
       remoteConnectBtn.classList.remove('connected');
       const ok = await connectRemoteHost(host);
       remoteConnectBtn.disabled = false;
-      if (ok) { remoteConnectBtn.textContent = '✓ Connected'; remoteConnectBtn.classList.add('connected'); }
+      if (ok) { remoteConnectBtn.textContent = t("✓ Connected"); remoteConnectBtn.classList.add('connected'); }
       else { remoteConnectBtn.textContent = orig; }
     };
   }

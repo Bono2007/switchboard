@@ -106,6 +106,9 @@
   <script src="../node_modules/@xterm/addon-webgl/lib/addon-webgl.js"></script>
   <script src="../node_modules/morphdom/dist/morphdom-umd.js"></script>
   <script src="codemirror-bundle.js"></script>
+  <!-- i18n must load before any script that calls t() at definition time. -->
+  <script src="i18n.js"></script>
+  <script src="locales/fr.js"></script>
   <script src="icons.js"></script>
   <script src="viewer-toolbar.js"></script>
   <script src="viewer-panel.js"></script>

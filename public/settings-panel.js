@@ -89,23 +89,23 @@
     settingsViewerBody.innerHTML = `
     <div class="settings-form">
       <div class="settings-section">
-        <div class="settings-section-title">Claude CLI Options</div>
+        <div class="settings-section-title">${t("Claude CLI Options")}</div>
 
         <div class="settings-field">
           <div class="settings-field-info">
             <div class="settings-field-header">
-              <span class="settings-label">Permission Mode</span>
+              <span class="settings-label">${t("Permission Mode")}</span>
               ${useGlobalCheckbox('permissionMode')}
             </div>
-            <div class="settings-description">Permission mode passed to the <code>claude</code> command</div>
+            <div class="settings-description">${t("Permission mode passed to the <code>claude</code> command")}</div>
           </div>
           <div class="settings-field-control">
             <select class="settings-select" id="sv-perm-mode" ${fieldDisabled('permissionMode')}>
-              <option value="">Default (none)</option>
-              <option value="acceptEdits" ${permModeValue === 'acceptEdits' ? 'selected' : ''}>Accept Edits</option>
-              <option value="plan" ${permModeValue === 'plan' ? 'selected' : ''}>Plan Mode</option>
-              <option value="dontAsk" ${permModeValue === 'dontAsk' ? 'selected' : ''}>Don't Ask</option>
-              <option value="bypassPermissions" ${permModeValue === 'bypassPermissions' ? 'selected' : ''}>Bypass</option>
+              <option value="">${t("Default (none)")}</option>
+              <option value="acceptEdits" ${permModeValue === 'acceptEdits' ? 'selected' : ''}>${t("Accept Edits")}</option>
+              <option value="plan" ${permModeValue === 'plan' ? 'selected' : ''}>${t("Plan Mode")}</option>
+              <option value="dontAsk" ${permModeValue === 'dontAsk' ? 'selected' : ''}>${t("Don't Ask")}</option>
+              <option value="bypassPermissions" ${permModeValue === 'bypassPermissions' ? 'selected' : ''}>${t("Bypass")}</option>
             </select>
           </div>
         </div>
@@ -113,10 +113,10 @@
         <div class="settings-field">
           <div class="settings-field-info">
             <div class="settings-field-header">
-              <span class="settings-label">Worktree</span>
+              <span class="settings-label">${t("Worktree")}</span>
               ${useGlobalCheckbox('worktree')}
             </div>
-            <div class="settings-description">Enable worktree for new sessions</div>
+            <div class="settings-description">${t("Enable worktree for new sessions")}</div>
           </div>
           <div class="settings-field-control">
             <label class="settings-toggle"><input type="checkbox" id="sv-worktree" ${worktreeValue ? 'checked' : ''} ${fieldDisabled('worktree')}><span class="settings-toggle-slider"></span></label>
@@ -126,10 +126,10 @@
         <div class="settings-field">
           <div class="settings-field-info">
             <div class="settings-field-header">
-              <span class="settings-label">Worktree Name</span>
+              <span class="settings-label">${t("Worktree Name")}</span>
               ${useGlobalCheckbox('worktreeName')}
             </div>
-            <div class="settings-description">Custom name for worktree branches</div>
+            <div class="settings-description">${t("Custom name for worktree branches")}</div>
           </div>
           <div class="settings-field-control">
             <input type="text" class="settings-input" id="sv-worktree-name" placeholder="auto" value="${escapeHtml(worktreeNameValue)}" ${fieldDisabled('worktreeName')} style="width:140px">
@@ -139,10 +139,10 @@
         <div class="settings-field">
           <div class="settings-field-info">
             <div class="settings-field-header">
-              <span class="settings-label">Chrome</span>
+              <span class="settings-label">${t("Chrome")}</span>
               ${useGlobalCheckbox('chrome')}
             </div>
-            <div class="settings-description">Enable Chrome browser automation</div>
+            <div class="settings-description">${t("Enable Chrome browser automation")}</div>
           </div>
           <div class="settings-field-control">
             <label class="settings-toggle"><input type="checkbox" id="sv-chrome" ${chromeValue ? 'checked' : ''} ${fieldDisabled('chrome')}><span class="settings-toggle-slider"></span></label>
@@ -152,10 +152,10 @@
         <div class="settings-field settings-field-wide">
           <div class="settings-field-info">
             <div class="settings-field-header">
-              <span class="settings-label">Additional Directories</span>
+              <span class="settings-label">${t("Additional Directories")}</span>
               ${useGlobalCheckbox('addDirs')}
             </div>
-            <div class="settings-description">Extra directories to include in Claude sessions</div>
+            <div class="settings-description">${t("Extra directories to include in Claude sessions")}</div>
           </div>
           <div class="settings-field-control">
             <input type="text" class="settings-input" id="sv-add-dirs" placeholder="/path/to/dir1, /path/to/dir2" value="${escapeHtml(addDirsValue)}" ${fieldDisabled('addDirs')}>
@@ -164,15 +164,15 @@
       </div>
 
       <div class="settings-section">
-        <div class="settings-section-title">Session Launch</div>
+        <div class="settings-section-title">${t("Session Launch")}</div>
 
         <div class="settings-field settings-field-wide">
           <div class="settings-field-info">
             <div class="settings-field-header">
-              <span class="settings-label">Pre-launch Command</span>
+              <span class="settings-label">${t("Pre-launch Command")}</span>
               ${useGlobalCheckbox('preLaunchCmd')}
             </div>
-            <div class="settings-description">Prepended to the claude command (e.g. "aws-vault exec profile --")</div>
+            <div class="settings-description">${t("Prepended to the claude command (e.g. \"aws-vault exec profile --\")")}</div>
           </div>
           <div class="settings-field-control">
             <input type="text" class="settings-input" id="sv-pre-launch" placeholder="e.g. aws-vault exec profile --" value="${escapeHtml(preLaunchValue)}" ${fieldDisabled('preLaunchCmd')}>
@@ -181,12 +181,12 @@
       </div>
 
       ${!isProject ? `<div class="settings-section">
-        <div class="settings-section-title">Application</div>
+        <div class="settings-section-title">${t("Application")}</div>
 
         <div class="settings-field">
           <div class="settings-field-info">
-            <span class="settings-label">Terminal Theme</span>
-            <div class="settings-description">Color theme for terminal sessions</div>
+            <span class="settings-label">${t("Terminal Theme")}</span>
+            <div class="settings-description">${t("Color theme for terminal sessions")}</div>
           </div>
           <div class="settings-field-control">
             <select class="settings-select" id="sv-terminal-theme">
@@ -199,12 +199,12 @@
 
         <div class="settings-field">
           <div class="settings-field-info">
-            <span class="settings-label">Shell Profile</span>
-            <div class="settings-description">Shell used for terminal and Claude sessions. Changes take effect for new sessions only.</div>
+            <span class="settings-label">${t("Shell Profile")}</span>
+            <div class="settings-description">${t("Shell used for terminal and Claude sessions. Changes take effect for new sessions only.")}</div>
           </div>
           <div class="settings-field-control">
             <select class="settings-select" id="sv-shell-profile">
-              <option value="auto" ${shellProfileValue === 'auto' ? 'selected' : ''}>Auto (detect)</option>
+              <option value="auto" ${shellProfileValue === 'auto' ? 'selected' : ''}>${t("Auto (detect)")}</option>
               ${shellProfiles.map(p =>
                 `<option value="${escapeHtml(p.id)}" ${shellProfileValue === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`
               ).join('')}
@@ -214,8 +214,8 @@
 
         <div class="settings-field">
           <div class="settings-field-info">
-            <span class="settings-label">Max Visible Sessions</span>
-            <div class="settings-description">Show up to this many sessions before collapsing the rest behind "+N older"</div>
+            <span class="settings-label">${t("Max Visible Sessions")}</span>
+            <div class="settings-description">${t("Show up to this many sessions before collapsing the rest behind \"+N older\"")}</div>
           </div>
           <div class="settings-field-control">
             <input type="number" class="settings-input settings-input-compact" id="sv-visible-count" min="1" max="100" value="${visCountValue}">
@@ -224,8 +224,8 @@
 
         <div class="settings-field">
           <div class="settings-field-info">
-            <span class="settings-label">Session Max Age (days)</span>
-            <div class="settings-description">Sessions older than this are hidden behind "+N older" even if under the count limit</div>
+            <span class="settings-label">${t("Session Max Age (days)")}</span>
+            <div class="settings-description">${t("Sessions older than this are hidden behind \"+N older\" even if under the count limit")}</div>
           </div>
           <div class="settings-field-control">
             <input type="number" class="settings-input settings-input-compact" id="sv-max-age" min="1" max="365" value="${maxAgeValue}">
@@ -234,8 +234,8 @@
 
         <div class="settings-field">
           <div class="settings-field-info">
-            <span class="settings-label">IDE Emulation</span>
-            <div class="settings-description">Emulate an IDE so Claude can open files and diffs in a side panel. Disable to use your own IDE instead. Changes take effect for new sessions only.</div>
+            <span class="settings-label">${t("IDE Emulation")}</span>
+            <div class="settings-description">${t("Emulate an IDE so Claude can open files and diffs in a side panel. Disable to use your own IDE instead. Changes take effect for new sessions only.")}</div>
           </div>
           <div class="settings-field-control">
             <label class="settings-toggle"><input type="checkbox" id="sv-mcp-emulation" ${mcpEmulationValue ? 'checked' : ''}><span class="settings-toggle-slider"></span></label>
@@ -244,8 +244,8 @@
 
         <div class="settings-field">
           <div class="settings-field-info">
-            <span class="settings-label">IDE integration over SSH</span>
-            <div class="settings-description">Let <strong>remote</strong> Claude sessions open files and diffs in Switchboard's side panel, like local ones. This reverse-forwards the local IDE port to the remote host (protected by a per-session token) — enable only for hosts you trust. Off by default; applies to new remote sessions.</div>
+            <span class="settings-label">${t("IDE integration over SSH")}</span>
+            <div class="settings-description">${t("Let <strong>remote</strong> Claude sessions open files and diffs in Switchboard's side panel, like local ones. This reverse-forwards the local IDE port to the remote host (protected by a per-session token) — enable only for hosts you trust. Off by default; applies to new remote sessions.")}</div>
           </div>
           <div class="settings-field-control">
             <label class="settings-toggle"><input type="checkbox" id="sv-remote-ide" ${remoteIdeValue ? 'checked' : ''}><span class="settings-toggle-slider"></span></label>
@@ -254,34 +254,34 @@
       </div>` : ''}
 
       ${!isProject ? `<div class="settings-section">
-        <div class="settings-section-title">Remote Hosts (SSH)</div>
-        <div class="settings-description" style="margin-bottom:10px">Hosts from <code>~/.ssh/config</code> are imported automatically. Add extra hosts below. Authentication uses your SSH agent/keys — passwords are never stored.</div>
+        <div class="settings-section-title">${t("Remote Hosts (SSH)")}</div>
+        <div class="settings-description" style="margin-bottom:10px">${t("Hosts from <code>~/.ssh/config</code> are imported automatically. Add extra hosts below. Authentication uses your SSH agent/keys — passwords are never stored.")}</div>
         <div id="sv-remote-config-list" class="remote-config-list"></div>
         <div id="sv-remote-manual-list" class="remote-manual-list"></div>
         <div class="remote-hosts-actions">
-          <button class="settings-check-updates-btn" id="sv-remote-add-btn" type="button">Add Host</button>
-          <button class="settings-save-btn" id="sv-remote-save-btn" type="button">Save Hosts</button>
+          <button class="settings-check-updates-btn" id="sv-remote-add-btn" type="button">${t("Add Host")}</button>
+          <button class="settings-save-btn" id="sv-remote-save-btn" type="button">${t("Save Hosts")}</button>
         </div>
         <div id="sv-remote-status" class="remote-hosts-status"></div>
       </div>` : ''}
 
       ${!isProject ? `<div class="settings-section">
-        <div class="settings-section-title">Updates</div>
+        <div class="settings-section-title">${t("Updates")}</div>
         <div class="settings-field">
           <div class="settings-field-info">
-            <span class="settings-label">Version</span>
+            <span class="settings-label">${t("Version")}</span>
             <div class="settings-description"><span id="sv-current-version"></span> <span id="sv-update-status"></span></div>
           </div>
           <div class="settings-field-control">
-            <button class="settings-check-updates-btn" id="sv-check-updates-btn">Check for Updates</button>
+            <button class="settings-check-updates-btn" id="sv-check-updates-btn">${t("Check for Updates")}</button>
           </div>
         </div>
       </div>` : ''}
 
       <div class="settings-btn-row">
-        <button class="settings-cancel-btn" id="sv-cancel-btn">Cancel</button>
-        <button class="settings-save-btn" id="sv-save-btn">Save Settings</button>
-        ${isProject ? '<button class="settings-remove-btn" id="sv-remove-btn">Hide Project</button>' : ''}
+        <button class="settings-cancel-btn" id="sv-cancel-btn">${t("Cancel")}</button>
+        <button class="settings-save-btn" id="sv-save-btn">${t("Save Settings")}</button>
+        ${isProject ? '<button class="settings-remove-btn" id="sv-remove-btn">${t("Hide Project")}</button>' : ''}
       </div>
     </div>
   `;
@@ -365,14 +365,14 @@
       if (!isProject && settings.mcpEmulation !== mcpEmulationValue) {
         const notice = document.createElement('div');
         notice.className = 'settings-notice';
-        notice.textContent = 'IDE Emulation setting changed. New sessions will use the updated setting \u2014 running sessions are not affected.';
+        notice.textContent = t("IDE Emulation setting changed. New sessions will use the updated setting \u2014 running sessions are not affected.");
         const saveBtn = settingsViewerBody.querySelector('#sv-save-btn');
         saveBtn.parentElement.insertBefore(notice, saveBtn);
         setTimeout(() => notice.remove(), 8000);
       }
 
       const saveBtn = settingsViewerBody.querySelector('#sv-save-btn');
-      saveBtn.textContent = '✓ Saved';
+      saveBtn.textContent = t("✓ Saved");
       saveBtn.style.background = '#2ea043';
       saveBtn.style.color = '#fff';
       setTimeout(() => closeSettingsViewer(), 600);
@@ -394,12 +394,12 @@
       const settingsUpdaterHandler = (type, data) => {
         if (!updateStatusEl) return;
         switch (type) {
-          case 'checking': updateStatusEl.textContent = '\u2014 checking\u2026'; break;
+          case 'checking': updateStatusEl.textContent = t("\u2014 checking\u2026"); break;
           case 'update-available': updateStatusEl.textContent = `\u2014 v${data.version} available`; break;
-          case 'update-not-available': updateStatusEl.textContent = '\u2014 up to date'; break;
+          case 'update-not-available': updateStatusEl.textContent = t("\u2014 up to date"); break;
           case 'download-progress': updateStatusEl.textContent = `\u2014 downloading ${Math.round(data.percent)}%`; break;
           case 'update-downloaded': updateStatusEl.textContent = `\u2014 v${data.version} ready, restart to update`; break;
-          case 'error': updateStatusEl.textContent = '\u2014 check failed'; break;
+          case 'error': updateStatusEl.textContent = t("\u2014 check failed"); break;
         }
       };
       window.api.onUpdaterEvent(settingsUpdaterHandler);
@@ -428,13 +428,13 @@
 
       const renderConfig = () => {
         if (!configHosts.length) { configListEl.innerHTML = ''; return; }
-        configListEl.innerHTML = '<div class="remote-config-title">From ~/.ssh/config</div>' +
+        configListEl.innerHTML = '<div class="remote-config-title">${t("From ~/.ssh/config")}</div>' +
           configHosts.map(h =>
             `<div class="remote-host-row">
                <span class="remote-host-name">${escapeHtml(h.label)}</span>
                <span class="remote-host-detail">${escapeHtml((h.user ? h.user + '@' : '') + (h.hostName || h.host || ''))}${h.port ? ':' + h.port : ''}</span>
-               <button class="remote-connect-btn" type="button" data-id="${escapeHtml(h.id)}" data-label="${escapeHtml(h.label)}">Connect</button>
-               <button class="remote-test-btn" type="button" data-id="${escapeHtml(h.id)}">Test</button>
+               <button class="remote-connect-btn" type="button" data-id="${escapeHtml(h.id)}" data-label="${escapeHtml(h.label)}">${t("Connect")}</button>
+               <button class="remote-test-btn" type="button" data-id="${escapeHtml(h.id)}">${t("Test")}</button>
              </div>`).join('');
       };
 
@@ -454,8 +454,8 @@
                <input class="settings-input" data-f="options" title="Extra ssh -o options for legacy/special hosts (e.g. HostKeyAlgorithms=+ssh-rsa, PreferredAuthentications=password). Leave blank for most hosts." placeholder="extra options, comma-sep (e.g. HostKeyAlgorithms=+ssh-rsa, PreferredAuthentications=password)" value="${escapeHtml(h.options)}" style="flex:1;min-width:220px">
              </div>
              <div class="remote-host-row remote-host-actions">
-               ${h.id ? `<button class="remote-connect-btn" type="button" data-id="${escapeHtml(h.id)}" data-label="${escapeHtml(h.label || h.host)}">Connect</button>
-               <button class="remote-test-btn" type="button" data-id="${escapeHtml(h.id)}">Test</button>` : '<span class="remote-host-detail">Save to enable Connect/Test</span>'}
+               ${h.id ? `<button class="remote-connect-btn" type="button" data-id="${escapeHtml(h.id)}" data-label="${escapeHtml(h.label || h.host)}">${t("Connect")}</button>
+               <button class="remote-test-btn" type="button" data-id="${escapeHtml(h.id)}">${t("Test")}</button>` : '<span class="remote-host-detail">${t("Save to enable Connect/Test")}</span>'}
                <button class="remote-writecfg-btn" type="button" data-i="${i}">→ ~/.ssh/config</button>
                <button class="remote-remove-btn" type="button" data-i="${i}" title="Remove">✕</button>
              </div>
@@ -484,7 +484,7 @@
             manualHosts = (res.hosts || []).filter(h => h.source === 'manual').map(toEditable);
             renderManual();
           } else {
-            setStatus('Failed to save hosts.', 'err');
+            setStatus(t('Failed to save hosts.'), 'err');
           }
         } catch (err) { setStatus('Save error: ' + err.message, 'err'); }
       });
@@ -498,12 +498,12 @@
         if (conn) {
           const host = { id: conn.dataset.id, label: conn.dataset.label || conn.dataset.id };
           const orig = conn.textContent;
-          conn.disabled = true; conn.textContent = 'Connecting…';
+          conn.disabled = true; conn.textContent = t("Connecting…");
           setStatus('Connecting to ' + host.label + '…');
           let ok = false;
           try { ok = (typeof connectRemoteHost === 'function') ? await connectRemoteHost(host) : false; } catch {}
           conn.disabled = false;
-          if (ok) { conn.textContent = '✓ Connected'; conn.classList.add('connected'); setStatus('✓ ' + host.label + ' connected (ready to Browse).', 'ok'); }
+          if (ok) { conn.textContent = t("✓ Connected"); conn.classList.add('connected'); setStatus('✓ ' + host.label + ' connected (ready to Browse).', 'ok'); }
           else { conn.textContent = orig; setStatus('', ''); }
           return;
         }
@@ -511,7 +511,7 @@
         const wcfg = e.target.closest('.remote-writecfg-btn');
         if (wcfg) {
           const h = manualHosts[Number(wcfg.dataset.i)];
-          if (!h || !h.host || !String(h.host).trim()) { setStatus('Enter a host first.', 'err'); return; }
+          if (!h || !h.host || !String(h.host).trim()) { setStatus(t('Enter a host first.'), 'err'); return; }
           wcfg.disabled = true;
           try {
             const r = await window.api.writeSshConfig(h);
@@ -526,7 +526,7 @@
         if (!btn) return;
         const id = btn.dataset.id;
         const old = btn.textContent;
-        btn.disabled = true; btn.textContent = 'Testing…';
+        btn.disabled = true; btn.textContent = t("Testing…");
         setStatus('Testing ' + id + '…');
         try {
           const r = await window.api.testRemoteHost(id);
