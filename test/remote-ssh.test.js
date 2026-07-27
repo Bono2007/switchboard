@@ -36,14 +36,23 @@ test('isSshProfile rejects non-ssh shells', () => {
 
 // --- shellArgs SSH branch ---
 
-test('shellArgs wraps a remote command as a single-quoted bash -l -i -c payload', () => {
+test('shellArgs wraps a remote command as a single-quoted login-shell -c payload', () => {
   const args = shellArgs('ssh', 'exec claude', ['-t', 'myhost']);
-  assert.deepEqual(args, ['-t', 'myhost', 'bash', '-l', '-i', '-c', "'exec claude'"]);
+  assert.deepEqual(args, ['-t', 'myhost', '${SHELL:-bash}', '-l', '-i', '-c', "'exec claude'"]);
+});
+
+test('shellArgs leaves ${SHELL:-bash} unquoted so the remote shell expands it', () => {
+  // Quoting it would run a binary literally named "${SHELL:-bash}". Forcing bash
+  // instead would miss anything set up in ~/.zshrc (fnm/nvm, ~/.local/bin), which
+  // is where a remote `claude` usually lives when the login shell is zsh.
+  const args = shellArgs('ssh', 'exec claude', ['-t', 'myhost']);
+  assert.equal(args[2], '${SHELL:-bash}');
+  assert.ok(!args.includes('bash'), 'must not hardcode bash as the remote shell');
 });
 
 test('shellArgs without a command opens a remote login shell', () => {
   const args = shellArgs('ssh', undefined, ['-t', 'myhost']);
-  assert.deepEqual(args, ['-t', 'myhost', 'bash', '-l', '-i', '-c', `'exec "\${SHELL:-bash}" -l'`]);
+  assert.deepEqual(args, ['-t', 'myhost', '${SHELL:-bash}', '-l', '-i', '-c', `'exec "\${SHELL:-bash}" -l'`]);
 });
 
 test('shellArgs single-quotes a remote command containing spaces and quotes', () => {

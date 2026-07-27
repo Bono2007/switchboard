@@ -186,14 +186,22 @@ function shellArgs(shellPath, cmd, extraArgs) {
     return [...(extraArgs || []), '--', 'bash', '-l', '-i'];
   }
 
-  // SSH: run the command on the remote inside a login+interactive bash so the
+  // SSH: run the command on the remote inside a login+interactive shell so the
   // remote PATH is set up (mirrors WSL). ssh concatenates the argv after the
   // hostname with spaces and the remote shell re-parses it, so the payload must
-  // be single-quoted to survive as one argument. extraArgs carries the ssh
-  // options and target (e.g. ['-t', 'user@host']).
+  // be single-quoted to survive as one argument, while ${SHELL:-bash} is left
+  // unquoted on purpose so the remote expands it.
+  //
+  // It has to be the login shell rather than a hardcoded bash: anything the user
+  // set up in ~/.zshrc — version managers like fnm/nvm/rbenv, ~/.local/bin — is
+  // invisible to `bash -l -i` when their login shell is zsh, which is the default
+  // on every macOS since Catalina. A remote `claude` installed through a version
+  // manager then fails with "command not found". bash stays the fallback for the
+  // rare account with no $SHELL. extraArgs carries the ssh options and target
+  // (e.g. ['-t', 'user@host']).
   if (isSshProfile(shellPath)) {
     const remote = cmd || 'exec "${SHELL:-bash}" -l';
-    return [...(extraArgs || []), 'bash', '-l', '-i', '-c', sshSingleQuote(remote)];
+    return [...(extraArgs || []), '${SHELL:-bash}', '-l', '-i', '-c', sshSingleQuote(remote)];
   }
 
   if (cmd) {
