@@ -59,6 +59,7 @@ function setActiveSession(id) {
   else sessionStorage.removeItem('activeSessionId');
   // Update file panel to show this session's open files/diffs
   if (typeof switchPanel === 'function') switchPanel(id);
+  refreshCtxGauge(id);
 }
 // Persist slug group expand state across reloads
 function getExpandedSlugs() {
@@ -341,6 +342,7 @@ window.api.onTerminalNotification((sessionId, message) => {
 // --- CLI busy state (OSC 0 title spinner detection) ---
 window.api.onCliBusyState((sessionId, busy) => {
   setActivity(sessionId, busy);
+  if (!busy && sessionId === activeSessionId) refreshCtxGauge(sessionId);
 });
 
 // --- Single entry point for all sidebar renders ---
@@ -1146,6 +1148,48 @@ const updaterHandler = (type, data) => {
   }
 };
 window.api.onUpdaterEvent(updaterHandler);
+
+// --- Context window gauge in status bar ---
+const ctxGaugeEl = document.getElementById('status-bar-ctx');
+const CTX_MAX = 200000;
+function fmtTokens(n) { return n >= 1000 ? Math.round(n / 1000) + 'K' : String(n); }
+async function refreshCtxGauge(sessionId) {
+  if (!sessionId) { ctxGaugeEl.style.display = 'none'; return; }
+  try {
+    const result = await window.api.getSessionTokens(sessionId);
+    if (!result) { ctxGaugeEl.style.display = 'none'; return; }
+    const { contextTokens } = result;
+    const pct = Math.round((contextTokens / CTX_MAX) * 100);
+    ctxGaugeEl.style.display = '';
+    ctxGaugeEl.title = `Context : ${fmtTokens(contextTokens)} / ${fmtTokens(CTX_MAX)} tokens (${pct}%)`;
+    const fill = ctxGaugeEl.querySelector('.ctx-fill');
+    fill.style.width = Math.min(Math.max(pct, 1), 100) + '%';
+    fill.className = 'ctx-fill' + (pct >= 80 ? ' ctx-high' : pct >= 60 ? ' ctx-mid' : '');
+    ctxGaugeEl.querySelector('.ctx-text').textContent = fmtTokens(contextTokens) + ' / 200K';
+  } catch {}
+}
+
+// --- Quota gauge (5h session) in status bar ---
+const quotaGaugeEl = document.getElementById('status-bar-quota');
+async function refreshQuotaGauge() {
+  try {
+    const usage = await window.api.getUsage();
+    const pct = usage?.session;
+    const reset = usage?.sessionReset;
+    if (pct === undefined) { quotaGaugeEl.style.display = 'none'; return; }
+    quotaGaugeEl.style.display = '';
+    quotaGaugeEl.title = `5h quota : ${pct}%${reset ? ' — Resets ' + reset : ''}`;
+    const fill = quotaGaugeEl.querySelector('.quota-fill');
+    fill.style.width = Math.max(pct, 1) + '%';
+    fill.className = 'quota-fill' + (pct >= 80 ? ' quota-high' : pct >= 60 ? ' quota-mid' : '');
+    quotaGaugeEl.querySelector('.quota-pct').textContent = pct + '%';
+  } catch {}
+}
+refreshQuotaGauge();
+setInterval(refreshQuotaGauge, 5 * 60 * 1000);
+quotaGaugeEl.addEventListener('click', () => {
+  document.querySelector('.sidebar-tab[data-tab="stats"]')?.click();
+});
 
 // --- Initialize file panel (MCP bridge UI) ---
 if (typeof initFilePanel === 'function') initFilePanel();

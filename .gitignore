@@ -9,3 +9,8 @@ public/codemirror-bundle.js
 .env
 .cache/
 dev-app-update.yml
+/.idea/.gitignore
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/switchboard.iml
+/.idea/vcs.xml

@@ -1189,6 +1189,36 @@ ipcMain.handle('read-session-jsonl', async (_event, sessionId) => {
   }
 });
 
+ipcMain.handle('get-session-tokens', (_event, sessionId) => {
+  const folder = getCachedFolder(sessionId);
+  if (!folder) return null;
+  const jsonlPath = path.join(PROJECTS_DIR, folder, sessionId + '.jsonl');
+  try {
+    const stat = fs.statSync(jsonlPath);
+    const readSize = Math.min(stat.size, 32768);
+    const buf = Buffer.alloc(readSize);
+    const fd = fs.openSync(jsonlPath, 'r');
+    fs.readSync(fd, buf, 0, readSize, stat.size - readSize);
+    fs.closeSync(fd);
+    const tail = buf.toString('utf-8');
+    const lines = tail.split('\n').filter(Boolean).reverse();
+    for (const line of lines) {
+      try {
+        const entry = JSON.parse(line);
+        const u = entry.message?.usage;
+        if (u && (entry.type === 'assistant' || entry.message?.role === 'assistant')) {
+          const contextTokens = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+          const model = entry.message?.model || entry.model || '';
+          return { contextTokens, model };
+        }
+      } catch {}
+    }
+    return null;
+  } catch {
+    return null;
+  }
+});
+
 ipcMain.handle('archive-session', (_event, sessionId, archived) => {
   const val = archived ? 1 : 0;
   setArchived(sessionId, val);
