@@ -55,7 +55,29 @@
     return active === 'en' ? 'en-US' : active;
   }
 
+  // Text baked into index.html. Titles are handled lazily by the tooltip layer,
+  // which translates them on first hover, so only placeholders and these few
+  // labelled elements need an explicit pass. Keys are their English text, same
+  // convention as everywhere else.
+  const STATIC_TEXT_IDS = [
+    'stats-viewer-title', 'settings-viewer-title', 'jsonl-viewer-title',
+    'grid-viewer-title', 'update-toast-msg', 'update-restart-btn', 'update-dismiss-btn',
+  ];
+
+  function translateStaticDom(root) {
+    const scope = root || document;
+    for (const id of STATIC_TEXT_IDS) {
+      const el = scope.getElementById && scope.getElementById(id);
+      if (el && el.textContent.trim()) el.textContent = t(el.textContent.trim());
+    }
+    for (const el of scope.querySelectorAll('[placeholder]')) {
+      const p = el.getAttribute('placeholder');
+      if (p) el.setAttribute('placeholder', t(p));
+    }
+  }
+
   window.registerLocale = registerLocale;
   window.t = t;
   window.i18nLocale = locale;
+  window.translateStaticDom = translateStaticDom;
 })();

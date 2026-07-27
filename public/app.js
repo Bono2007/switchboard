@@ -1229,3 +1229,10 @@ quotaGaugeEl.addEventListener('click', () => {
 
 // --- Initialize file panel (MCP bridge UI) ---
 if (typeof initFilePanel === 'function') initFilePanel();
+
+// --- Tooltips and static text ---
+// One delegated listener on <body> covers every button, including those
+// rendered later; native title attributes are adopted and translated on
+// first hover, so no call site needs changing.
+if (typeof attachTooltips === 'function') attachTooltips(document.body);
+if (typeof translateStaticDom === 'function') translateStaticDom(document);
