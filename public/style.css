@@ -1611,6 +1611,25 @@ body { display: flex; flex-direction: column; }
 }
 
 /* Shared viewer toolbar (plan, memory, file panel) */
+/* Drawn tooltip, replacing the unreliable native title one. Positioned from JS
+   in viewer-toolbar.js; fixed so no ancestor overflow can clip it. */
+.ui-tooltip {
+  position: fixed;
+  z-index: 10000;
+  display: none;
+  pointer-events: none;
+  max-width: 280px;
+  padding: 5px 9px;
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 5px;
+  background: #24242e;
+  color: #d0d0e0;
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+}
+
 .viewer-toolbar {
   display: flex;
   align-items: center;

@@ -218,7 +218,10 @@ function currentPlansDirs() {
   try {
     projectPaths = [...getAllFolderMeta().values()].map(m => m && m.projectPath).filter(Boolean);
   } catch {}
-  return plansDirs.collectPlansDirs({ homeDir: os.homedir(), projectPaths, readJson: readJsonSafe });
+  return plansDirs.collectPlansDirs({
+    homeDir: os.homedir(), projectPaths, readJson: readJsonSafe,
+    dirExists: (d) => { try { return fs.statSync(d).isDirectory(); } catch { return false; } },
+  });
 }
 
 function resolvePlanPath(target, dirs) {

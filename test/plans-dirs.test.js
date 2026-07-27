@@ -89,6 +89,66 @@ test('collectPlansDirs tolerates junk in the project list', () => {
   assert.deepEqual(dirs, [{ dir: DEFAULT, project: null }]);
 });
 
+// --- conventional locations (superpowers etc.) ---
+
+test('collectPlansDirs picks up docs/superpowers/plans when it exists', () => {
+  // The superpowers writing-plans skill saves there and never sets
+  // plansDirectory, so setting-only discovery misses every plan it wrote.
+  const proj = path.join(path.sep, 'w', 'barometre');
+  const sp = path.join(proj, 'docs', 'superpowers', 'plans');
+  const dirs = collectPlansDirs({
+    homeDir: HOME, projectPaths: [proj], readJson: reader({}), dirExists: (d) => d === sp,
+  });
+  assert.deepEqual(dirs, [
+    { dir: DEFAULT, project: null },
+    { dir: sp, project: 'barometre' },
+  ]);
+});
+
+test('collectPlansDirs picks up docs/plans when it exists', () => {
+  const proj = path.join(path.sep, 'w', 'agentops');
+  const dp = path.join(proj, 'docs', 'plans');
+  const dirs = collectPlansDirs({
+    homeDir: HOME, projectPaths: [proj], readJson: reader({}), dirExists: (d) => d === dp,
+  });
+  assert.equal(dirs.length, 2);
+  assert.deepEqual(dirs[1], { dir: dp, project: 'agentops' });
+});
+
+test('collectPlansDirs skips conventional directories that do not exist', () => {
+  const dirs = collectPlansDirs({
+    homeDir: HOME, projectPaths: ['/w/a'], readJson: reader({}), dirExists: () => false,
+  });
+  assert.deepEqual(dirs, [{ dir: DEFAULT, project: null }]);
+});
+
+test('collectPlansDirs keeps both the configured and the conventional directory', () => {
+  const proj = path.join(path.sep, 'w', 'barometre');
+  const configured = path.join(proj, '.claude', 'plans');
+  const sp = path.join(proj, 'docs', 'superpowers', 'plans');
+  const files = { [path.join(proj, '.claude', 'settings.json')]: { plansDirectory: '.claude/plans' } };
+  const dirs = collectPlansDirs({
+    homeDir: HOME, projectPaths: [proj], readJson: reader(files), dirExists: (d) => d === sp,
+  });
+  assert.deepEqual(dirs.map(d => d.dir), [DEFAULT, configured, sp]);
+});
+
+test('collectPlansDirs does not probe conventional locations without dirExists', () => {
+  const dirs = collectPlansDirs({ homeDir: HOME, projectPaths: ['/w/a'], readJson: reader({}) });
+  assert.deepEqual(dirs, [{ dir: DEFAULT, project: null }]);
+});
+
+test('collectPlansDirs never duplicates a directory reachable two ways', () => {
+  // plansDirectory pointing at the conventional location must not list it twice.
+  const proj = path.join(path.sep, 'w', 'p');
+  const sp = path.join(proj, 'docs', 'superpowers', 'plans');
+  const files = { [path.join(proj, '.claude', 'settings.json')]: { plansDirectory: 'docs/superpowers/plans' } };
+  const dirs = collectPlansDirs({
+    homeDir: HOME, projectPaths: [proj], readJson: reader(files), dirExists: (d) => d === sp,
+  });
+  assert.deepEqual(dirs.map(d => d.dir), [DEFAULT, sp]);
+});
+
 // --- path validation ---
 
 test('isInside accepts the directory itself and its descendants', () => {

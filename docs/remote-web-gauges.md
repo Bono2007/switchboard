@@ -179,7 +179,11 @@ Claude Code describes its own setting as *"Custom directory for plan files, rela
 
 Switchboard used to read the fallback and nothing else, from a hardcoded constant. Any project that set `plansDirectory` had its plans silently hidden, and the empty state claimed `No plans found in ~/.claude/plans/` even when that wasn't the directory in use.
 
-Now the Plans tab scans the shared directory plus the resolved `plansDirectory` of every known local project, following Claude Code's own precedence: project `settings.local.json`, then project `settings.json`, then user `settings.json`. Plans coming from a project's own directory carry a badge naming that project. Remote projects are skipped — their plans live on the other machine.
+Worse, the setting isn't even how most plans get written. The **superpowers** plugin — the usual way a plan gets produced in practice — never touches `plansDirectory`. Its `writing-plans` skill just says *"Save plans to: `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`"*, a plain convention. Setting-only discovery finds none of them.
+
+Now the Plans tab scans three things: the shared directory, the resolved `plansDirectory` of every known local project (following Claude Code's precedence — project `settings.local.json`, then project `settings.json`, then user `settings.json`), and the conventional per-project locations `docs/superpowers/plans` and `docs/plans` when they exist. Plans coming from a project carry a badge naming it. Remote projects are skipped — their plans live on the other machine.
+
+One limit worth knowing: only projects Switchboard already knows about are scanned, meaning those with transcripts under `~/.claude/projects`. A `docs/superpowers/plans/` sitting in a project where you never ran Claude Code stays invisible. Switchboard is a session browser, not a disk scanner.
 
 Two consequences worth knowing:
 
