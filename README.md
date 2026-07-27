@@ -52,6 +52,16 @@ Switchboard monitors all your sessions in the background and shows status indica
 - **Permission approval** — When Claude is blocked waiting for a permission grant, the session badge lets you know immediately.
 - **Activity indicators** — See which sessions are actively running, idle, or finished.
 
+Those signals come from the CLI itself. Switchboard installs a hook in
+`~/.claude/settings.json` that reports when a turn starts, needs you, or
+finishes, so a badge changes on the event rather than on a guess. Reading the
+terminal title remains as a fallback for sessions that are not hooked.
+
+Hooks you configured yourself are never modified, and **Settings → Agent
+Status** shows whether the hook is live, with a Test button that exercises the
+whole delivery path. See [docs/agent-status-hooks.md](docs/agent-status-hooks.md)
+for the arbitration rules, the wire protocol, and troubleshooting.
+
 ## Editor
 
 | Shortcut | Action |
@@ -152,7 +162,10 @@ main.js            Electron main process
 preload.js         Context bridge (IPC bindings)
 db.js              SQLite session cache & metadata
 public/            Renderer (HTML/CSS/JS)
+agent-hooks/       Agent status: protocol, state machine, socket, installer
+bin/               The hook client Claude Code runs
 scripts/           Build & postinstall scripts
 build/             Icons, entitlements, builder resources
+docs/              Feature documentation
 .github/workflows/ CI/CD
 ```
