@@ -227,6 +227,10 @@ async function launchRemoteSession(host, opts) {
     type: 'terminal',
     remote: true,
     remoteLabel: host.label,
+    // Indexed past sessions carry hostId/source from the DB; sessions launched
+    // here had neither, so relaunching or resuming one could not tell which host
+    // it belonged to.
+    hostId: host.id,
     remoteMode: mode,
   };
 

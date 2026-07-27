@@ -286,7 +286,15 @@ window.api.onProcessExited((sessionId, exitCode) => {
   // Plain terminal sessions are ephemeral — destroy immediately and remove from
   // the sidebar. Claude sessions stay mounted (see below) so the user can read
   // the exit reason.
-  if (session?.type === 'terminal') {
+  //
+  // Remote sessions are all tagged type:'terminal' by launchRemoteSession, so a
+  // remote *Claude* session would be torn down here and its error lost — which is
+  // exactly the case the banner exists for, since a missing or unresolvable remote
+  // `claude` exits instantly with code 127. Distinguish on remoteMode, matching
+  // the isRemoteClaude predicate in sidebar.js. Remote shells stay ephemeral like
+  // local ones.
+  const isRemoteClaude = !!session?.remote && session.remoteMode !== 'shell';
+  if (session?.type === 'terminal' && !isRemoteClaude) {
     if (entry) destroySession(sessionId);
     if (gridViewActive) {
       gridViewerCount.textContent = gridCards.size + ' session' + (gridCards.size !== 1 ? 's' : '');
@@ -779,6 +787,16 @@ async function showTerminalHeader(session) {
 
 // Terminal lifecycle (createTerminalEntry, destroySession, showSession, setupDragAndDrop) → terminal-manager.js
 
+// Derive the remote directory from an ssh://<label>/<dir> project path, which is
+// always present on a remote session even when remotePath is not.
+function remoteDirFromProjectPath(projectPath, explicit) {
+  if (explicit) return explicit;
+  if (typeof projectPath !== 'string' || !projectPath.startsWith('ssh://')) return '~';
+  const rest = projectPath.slice('ssh://'.length);
+  const slash = rest.indexOf('/');
+  return slash === -1 ? '~' : (rest.slice(slash + 1) || '~');
+}
+
 async function openSession(session, customOptions) {
   const { sessionId, projectPath } = session;
 
@@ -787,7 +805,23 @@ async function openSession(session, customOptions) {
     const entry = openSessions.get(sessionId);
     if (entry.closed) {
       destroySession(sessionId);
-      if (session.type === 'terminal') {
+      // A remote session has to relaunch on its host. It is tagged
+      // type:'terminal' like a local plain terminal, so without this it would
+      // fall into the branch below and spawn a LOCAL shell in a directory
+      // literally named "ssh://host/dir", which does not exist.
+      if (session.remote) {
+        const hostId = session.hostId || session.source;
+        // Still pending means it never wrote a transcript on the host, so there
+        // is no session to --resume: relaunch fresh rather than fail on an
+        // unknown id. Anything else falls through to the resume path below.
+        if (hostId && pendingSessions.has(sessionId)) {
+          launchRemoteSession({ id: hostId, label: session.remoteLabel || hostId }, {
+            remoteMode: session.remoteMode === 'shell' ? 'shell' : 'claude',
+            remoteDir: remoteDirFromProjectPath(projectPath, session.remotePath),
+          });
+          return;
+        }
+      } else if (session.type === 'terminal') {
         launchTerminalSession({ projectPath: session.projectPath });
         return;
       }
@@ -801,19 +835,12 @@ async function openSession(session, customOptions) {
   // behavior as clicking a local session (which auto-resumes via `claude --resume`).
   let remoteResumeOptions = null;
   if (session.remote && session.remoteMode !== 'shell') {
-    // Derive the remote dir from the ssh://<label>/<dir> projectPath (always
-    // present) so resume lands in the session's own directory even if the
-    // session object is missing remotePath.
-    let remoteDir = session.remotePath;
-    if (!remoteDir && typeof projectPath === 'string' && projectPath.startsWith('ssh://')) {
-      const rest = projectPath.slice('ssh://'.length);
-      const slash = rest.indexOf('/');
-      remoteDir = slash === -1 ? '~' : (rest.slice(slash + 1) || '~');
-    }
+    // Resume lands in the session's own directory even when the session object
+    // is missing remotePath.
     remoteResumeOptions = {
       remoteHostId: session.hostId || session.source,
       remoteMode: 'claude',
-      remoteDir: remoteDir || '~',
+      remoteDir: remoteDirFromProjectPath(projectPath, session.remotePath),
       resume: sessionId,
     };
   }

@@ -7,6 +7,7 @@ This build combines three community contributions on top of Switchboard 0.0.30:
 | Remote SSH sessions | [#78](https://github.com/doctly/switchboard/pull/78) | HAN-oQo |
 | Web server mode | [#28](https://github.com/doctly/switchboard/pull/28) | nandanadileep |
 | Context & quota gauges | [#72](https://github.com/doctly/switchboard/pull/72) | Flaykz |
+| Exit banner instead of a vanishing terminal | [#58](https://github.com/doctly/switchboard/pull/58) | HaydnG |
 
 None of them are merged upstream yet. What follows is how to drive each one, and where they overlap.
 
@@ -146,6 +147,50 @@ Two indicators in the status bar, so you can judge whether to keep going in a se
 **Quota gauge** — your 5-hour quota usage, from the same data as the Stats tab. Click it to jump there. Refreshes every 5 minutes.
 
 Both stay hidden when there's no data — a brand-new session with no assistant reply yet shows nothing, which is expected rather than broken.
+
+---
+
+## 4. Exit banner
+
+When a session's process dies, the terminal used to be destroyed immediately, taking whatever it printed with it. A launch that failed fast looked like the button doing nothing at all.
+
+Now a Claude session that exits stays mounted with a banner:
+
+```
+── session exited (code 127) — re-click this session in the sidebar to relaunch, or click another to dismiss ──
+```
+
+Dim for a clean exit, amber otherwise, and whatever the process wrote is still scrollable above it. Re-click the session in the sidebar to relaunch it, or click another to dismiss. Plain shell sessions stay ephemeral — they're removed on exit as before.
+
+This matters most for remote sessions, where the usual failure is a `claude` that isn't installed or isn't on the login shell's PATH: it exits with code 127 within a second, and without the banner there is nothing to see.
+
+### Remote sessions and the exit banner
+
+Two fixes were needed on top of #58 for it to help remote sessions at all:
+
+- `launchRemoteSession` tags every remote session `type: 'terminal'`, including Claude ones, so #58's ephemeral branch destroyed exactly the sessions the banner was written for. The distinction now uses `remoteMode`, matching the `isRemoteClaude` predicate already in `sidebar.js`.
+- Re-clicking a closed remote session hit the plain-terminal relaunch path and spawned a **local** shell in a directory literally named `ssh://host/dir`. Remote sessions now relaunch on their host; sessions that never wrote a transcript relaunch fresh instead of failing on an unknown `--resume` id.
+
+---
+
+## Remote hosts: the PATH trap
+
+A remote session runs your command through the remote **login shell** (`${SHELL:-bash} -l -i -c …`). Originally this was a hardcoded `bash`, which breaks on any host whose login shell is zsh — the macOS default since Catalina — because everything set up in `~/.zshrc` is invisible to bash:
+
+```
+bash -l -i      -> claude: not found; PATH has neither fnm nor ~/.local/bin
+${SHELL:-bash}  -> /Users/…/fnm_multishells/…/bin/claude
+```
+
+If `+ Claude` fails on a host, check what the login shell actually resolves:
+
+```bash
+ssh <host> "\${SHELL:-bash} -l -i -c 'command -v claude'"
+```
+
+Empty output means the CLI isn't installed there, or isn't on the login shell's PATH. Installing it in `~/.local/bin` is not enough on its own — that directory has to be on the PATH your login shell builds.
+
+Note also that the remote Claude Code needs its **own** authentication. A fresh remote session showing `Not logged in · Run /login` is working correctly; run `/login` inside it.
 
 ---
 
