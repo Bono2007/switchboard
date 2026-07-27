@@ -266,6 +266,21 @@
       </div>` : ''}
 
       ${!isProject ? `<div class="settings-section">
+        <div class="settings-section-title">${t("Agent Status")}</div>
+        <div class="settings-description" style="margin-bottom:10px">${t("Claude Code reports when a turn starts, needs you, or finishes, through a hook Switchboard installs in <code>~/.claude/settings.json</code>. Without it, session activity is guessed from the terminal title, which is less reliable. Hooks you configured yourself are never modified.")}</div>
+        <div class="settings-field">
+          <div class="settings-field-info">
+            <span class="settings-label">${t("Hook")}</span>
+            <div class="settings-description"><span id="sv-hooks-status">${t("checking…")}</span></div>
+          </div>
+          <div class="settings-field-control">
+            <button class="settings-check-updates-btn" id="sv-hooks-test-btn" type="button">${t("Test")}</button>
+            <button class="settings-check-updates-btn" id="sv-hooks-refresh-btn" type="button">${t("Refresh")}</button>
+          </div>
+        </div>
+      </div>` : ''}
+
+      ${!isProject ? `<div class="settings-section">
         <div class="settings-section-title">${t("Updates")}</div>
         <div class="settings-field">
           <div class="settings-field-info">
@@ -382,6 +397,34 @@
     settingsViewerBody.querySelector('#sv-cancel-btn').addEventListener('click', () => {
       closeSettingsViewer();
     });
+
+    // Agent status hooks: health line + Test/Refresh (global settings only)
+    const hooksStatusEl = settingsViewerBody.querySelector('#sv-hooks-status');
+    if (hooksStatusEl) {
+      const describe = (health) => {
+        if (!health) return t("unavailable");
+        if (health.conflicts?.length) {
+          return t("conflict — {events} owned by another install",
+            { events: health.conflicts.map(c => c.event).join(', ') });
+        }
+        if (!health.listening) return t("not listening — {error}", { error: health.lastError || t("unknown") });
+        if (!health.installed) return t("not installed in ~/.claude/settings.json");
+        return t("active — {count} sessions reporting", { count: health.sessions?.filter(s => s.hooked).length || 0 });
+      };
+      const show = (text) => { hooksStatusEl.textContent = text; };
+      window.api.agentHooksHealth().then(h => show(describe(h))).catch(() => show(t("unavailable")));
+
+      settingsViewerBody.querySelector('#sv-hooks-test-btn')?.addEventListener('click', async () => {
+        show(t("testing…"));
+        const r = await window.api.agentHooksTest();
+        show(r.ok ? t("test delivered") : t("test failed — {error}", { error: r.output || t("no response") }));
+      });
+      settingsViewerBody.querySelector('#sv-hooks-refresh-btn')?.addEventListener('click', async () => {
+        show(t("refreshing…"));
+        const r = await window.api.agentHooksRefresh();
+        show(r.ok ? describe(r.health) : t("refresh failed — {error}", { error: r.error }));
+      });
+    }
 
     // Check for updates button + current version + inline status
     const checkUpdatesBtn = settingsViewerBody.querySelector('#sv-check-updates-btn');

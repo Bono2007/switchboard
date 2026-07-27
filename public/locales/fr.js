@@ -206,4 +206,26 @@ window.registerLocale('fr', {
     'Sélectionnez une session dans la barre latérale pour commencer.',
   'Click the Stats tab to view activity heatmap.':
     "Cliquez sur l'onglet Statistiques pour voir la carte d'activité.",
+
+  // Statut des agents (hooks)
+  'Agent Status': 'Statut des agents',
+  'Claude Code reports when a turn starts, needs you, or finishes, through a hook Switchboard installs in <code>~/.claude/settings.json</code>. Without it, session activity is guessed from the terminal title, which is less reliable. Hooks you configured yourself are never modified.':
+    "Claude Code signale le début d'un tour, une attente de votre part et la fin, via un hook que Switchboard installe dans <code>~/.claude/settings.json</code>. Sans lui, l'activité est devinée à partir du titre du terminal, ce qui est moins fiable. Les hooks que vous avez configurés vous-même ne sont jamais modifiés.",
+  'Hook': 'Hook',
+  'Test': 'Tester',
+  'Refresh': 'Rafraîchir',
+  'checking…': 'vérification…',
+  'testing…': 'test en cours…',
+  'refreshing…': 'rafraîchissement…',
+  'unavailable': 'indisponible',
+  'unknown': 'inconnue',
+  'no response': 'aucune réponse',
+  'test delivered': 'test délivré',
+  'test failed — {error}': 'échec du test — {error}',
+  'refresh failed — {error}': 'échec du rafraîchissement — {error}',
+  'not installed in ~/.claude/settings.json': 'non déclaré dans ~/.claude/settings.json',
+  'not listening — {error}': "socket non ouvert — {error}",
+  'active — {count} sessions reporting': 'actif — {count} sessions rapportent leur état',
+  'conflict — {events} owned by another install':
+    "conflit — {events} appartiennent à une autre installation",
 });

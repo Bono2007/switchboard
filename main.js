@@ -32,6 +32,7 @@ const remoteIndex = require('./remote-index');
 const remoteIde = require('./remote-ide');
 const { startScheduler } = require('./schedule-runner');
 const { encodeProjectPath } = require('./encode-project-path');
+const { createAgentHookRuntime } = require('./agent-hooks/runtime');
 
 
 
@@ -82,6 +83,38 @@ const MAX_BUFFER_SIZE = 256 * 1024;
 // Active PTY sessions
 const activeSessions = new Map();
 let mainWindow = null;
+
+// --- Agent status hooks ---------------------------------------------------
+// The CLI reports its own lifecycle over a Unix socket, which is precise and
+// event-driven. Reading the OSC 0 title stays as a fallback for sessions whose
+// hooks are missing — see agent-hooks/status.js for how the two are arbitrated.
+const DATA_DIR = process.env.SWITCHBOARD_DATA_DIR || path.join(os.homedir(), '.switchboard');
+
+const agentHooks = createAgentHookRuntime({
+  dataDir: DATA_DIR,
+  appDir: app.getAppPath(),
+  electronPath: process.execPath,
+  settingsPath: path.join(os.homedir(), '.claude', 'settings.json'),
+  log,
+  send: (channel, ...args) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, ...args);
+  },
+  // A hook knows the pane it was launched in (stable) and the CLI session it
+  // belongs to (changes on fork/compact). Try both, then report under whichever
+  // id the renderer currently knows the session by.
+  resolveSession: (event) => {
+    for (const key of [event.paneId, event.sessionId]) {
+      if (!key) continue;
+      const session = activeSessions.get(key);
+      if (session) return session.realSessionId || key;
+    }
+    // A forked session is re-keyed under its real id; match on that too.
+    for (const session of activeSessions.values()) {
+      if (session.realSessionId && session.realSessionId === event.sessionId) return session.realSessionId;
+    }
+    return null;
+  },
+});
 
 function createWindow() {
   // Restore saved window bounds
@@ -1573,6 +1606,8 @@ ipcMain.handle('open-terminal', async (_event, sessionId, projectPath, isNew, se
         ...cleanPtyEnv,
         TERM: 'xterm-256color', COLORTERM: 'truecolor',
         TERM_PROGRAM: 'iTerm.app', TERM_PROGRAM_VERSION: '3.6.6', FORCE_COLOR: '3', ITERM_SESSION_ID: '1',
+        // How this session's hooks find us and say which pane they belong to.
+        ...agentHooks.sessionEnv(sessionId),
       };
       if (mcpServer) {
         ptyEnv.CLAUDE_CODE_SSE_PORT = String(mcpServer.port);
@@ -1628,20 +1663,16 @@ ipcMain.handle('open-terminal', async (_event, sessionId, projectPath, isNew, se
           const isBusy = firstChar.charCodeAt(0) >= 0x2800 && firstChar.charCodeAt(0) <= 0x28FF;
           const isIdle = firstChar === '\u2733'; // ✳
           log.debug(`[OSC 0] session=${currentId} char=U+${firstChar.charCodeAt(0).toString(16).toUpperCase()} busy=${isBusy} idle=${isIdle} wasBusy=${!!session._cliBusy}`);
+          // The status machine decides what this is worth: applied at once when
+          // the session has no hooks, held in a grace window when it does.
           if (isBusy && !session._cliBusy) {
             session._cliBusy = true;
             session._oscIdle = false;
-            log.debug(`[OSC 0] session=${currentId} → BUSY`);
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('cli-busy-state', currentId, true);
-            }
+            agentHooks.status.applyDetection(currentId, { busy: true });
           } else if (isIdle && session._cliBusy) {
             session._cliBusy = false;
             session._oscIdle = true;
-            log.debug(`[OSC 0] session=${currentId} → IDLE`);
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('cli-busy-state', currentId, false);
-            }
+            agentHooks.status.applyDetection(currentId, { busy: false });
           }
         }
       }
@@ -1657,10 +1688,7 @@ ipcMain.handle('open-terminal', async (_event, sessionId, projectPath, isNew, se
           if ((level === '1' || level === '2' || level === '3') && !session._cliBusy) {
             session._cliBusy = true;
             session._oscIdle = false;
-            log.debug(`[OSC 9;4] session=${currentId} → BUSY`);
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('cli-busy-state', currentId, true);
-            }
+            agentHooks.status.applyDetection(currentId, { busy: true });
           }
         } else {
           // Regular notification (attention, permission, etc.)
@@ -1705,6 +1733,8 @@ ipcMain.handle('open-terminal', async (_event, sessionId, projectPath, isNew, se
 
   ptyProcess.onExit(({ exitCode }) => {
     session.exited = true;
+    // Drop any pending grace window: the pane is gone, not idling.
+    agentHooks.status.endSession(session.realSessionId || sessionId);
     // Clean up MCP server
     const mcpId = session.realSessionId || sessionId;
     shutdownMcpServer(mcpId);
@@ -1878,6 +1908,27 @@ ipcMain.handle('updater-install', () => {
   autoUpdater.quitAndInstall();
 });
 
+// --- IPC: agent status hooks ---
+ipcMain.handle('agent-hooks-health', () => agentHooks.health());
+
+ipcMain.handle('agent-hooks-refresh', () => {
+  try {
+    return { ok: true, health: agentHooks.refresh() };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('agent-hooks-log', () => agentHooks.readLog());
+
+// Runs the staged hook exactly as Claude Code would. The exit code proves the
+// whole delivery path — shim, runtime, socket, server, ack — end to end.
+ipcMain.handle('agent-hooks-test', () => new Promise((resolve) => {
+  const { execFile } = require('child_process');
+  execFile(agentHooks.health().bin, ['--event', 'test', '--test'], { timeout: 3000 },
+    (err, _stdout, stderr) => resolve({ ok: !err, output: (stderr || '').trim() || (err ? err.message : '') }));
+}));
+
 // --- App lifecycle ---
 app.whenReady().then(() => {
   buildMenu();
@@ -1889,6 +1940,10 @@ app.whenReady().then(() => {
   setTimeout(() => { try { startupRemoteSync(); } catch {} }, 2000);
   // Remove our own stale IDE lock files left by a previous crash (Phase 3).
   try { cleanStaleLockFiles(log); } catch {}
+
+  // Stage the hook client, reconcile ~/.claude/settings.json, open the socket.
+  // Never fatal: without it the OSC fallback carries on as before.
+  agentHooks.start().catch((err) => log.error(`[hooks] startup failed: ${err.message}`));
 
   // Shared runCommand for both cron scheduler and manual "run now"
   const { spawn: cpSpawn } = require('child_process');
@@ -1946,6 +2001,9 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   // Shut down all MCP servers
   shutdownAllMcp();
+
+  // Release the socket file so the next launch does not have to reclaim it.
+  agentHooks.close();
 
   // Close filesystem watcher
   if (projectsWatcher) {

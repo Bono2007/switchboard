@@ -57,6 +57,12 @@ contextBridge.exposeInMainWorld('api', {
   resizeTerminal: (id, cols, rows) => ipcRenderer.send('terminal-resize', id, cols, rows),
   closeTerminal: (id) => ipcRenderer.send('close-terminal', id),
 
+  // Agent status hooks
+  agentHooksHealth:  ()  => ipcRenderer.invoke('agent-hooks-health'),
+  agentHooksRefresh: ()  => ipcRenderer.invoke('agent-hooks-refresh'),
+  agentHooksTest:    ()  => ipcRenderer.invoke('agent-hooks-test'),
+  agentHooksLog:     ()  => ipcRenderer.invoke('agent-hooks-log'),
+
   // Listeners (main → renderer)
   onTerminalData: (callback) => {
     ipcRenderer.on('terminal-data', (_event, sessionId, data) => callback(sessionId, data));
