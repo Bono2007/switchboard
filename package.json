@@ -70,7 +70,7 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "Bono2007",
+      "owner": "doctly",
       "repo": "switchboard"
     },
     "mac": {
