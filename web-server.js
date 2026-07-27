@@ -506,6 +506,37 @@ function handleReadSessionJsonl(sessionId) {
   } catch (err) { return { error: err.message }; }
 }
 
+// Mirrors the 'get-session-tokens' handler in main.js: reads the tail of the
+// transcript and returns the newest assistant usage entry, which feeds the
+// status-bar context gauge.
+function handleGetSessionTokens(sessionId) {
+  const folder = getCachedFolder(sessionId);
+  if (!folder) return null;
+  const jsonlPath = path.join(PROJECTS_DIR, folder, sessionId + '.jsonl');
+  try {
+    const stat = fs.statSync(jsonlPath);
+    const readSize = Math.min(stat.size, 32768);
+    const buf = Buffer.alloc(readSize);
+    const fd = fs.openSync(jsonlPath, 'r');
+    fs.readSync(fd, buf, 0, readSize, stat.size - readSize);
+    fs.closeSync(fd);
+    const lines = buf.toString('utf-8').split('\n').filter(Boolean).reverse();
+    for (const line of lines) {
+      try {
+        const entry = JSON.parse(line);
+        const u = entry.message?.usage;
+        if (u && (entry.type === 'assistant' || entry.message?.role === 'assistant')) {
+          const contextTokens = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+          return { contextTokens, model: entry.message?.model || entry.model || '' };
+        }
+      } catch {}
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function handleGetSetting(key) { return getSetting(key); }
 function handleSetSetting(key, value) { setSetting(key, value); return { ok: true }; }
 function handleDeleteSetting(key) { deleteSetting(key); return { ok: true }; }
@@ -809,6 +840,7 @@ async function dispatch(channel, args) {
     case 'rename-session':         return handleRenameSession(args[0], args[1]);
     case 'archive-session':        return handleArchiveSession(args[0], args[1]);
     case 'read-session-jsonl':     return handleReadSessionJsonl(args[0]);
+    case 'get-session-tokens':     return handleGetSessionTokens(args[0]);
     case 'get-setting':            return handleGetSetting(args[0]);
     case 'set-setting':            return handleSetSetting(args[0], args[1]);
     case 'delete-setting':         return handleDeleteSetting(args[0]);

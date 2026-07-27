@@ -122,6 +122,23 @@
     openTerminal:          (id, pp, isNew, so)  => invoke('open-terminal', id, pp, isNew, so),
     search:                (t, q, to)           => invoke('search', t, q, to),
     readSessionJsonl:      (id)                 => invoke('read-session-jsonl', id),
+    getSessionTokens:      (id)                 => invoke('get-session-tokens', id),
+
+    // Remote SSH — Electron-only for now. The interactive connect flow streams
+    // password/passphrase prompts over IPC and has no WebSocket equivalent yet,
+    // so web mode reports "no remote hosts" rather than half-working dialogs.
+    getRemoteTargets:      ()                   => Promise.resolve([]),
+    saveRemoteHosts:       ()                   => Promise.reject(new Error('Remote SSH is not available in web mode')),
+    testRemoteHost:        ()                   => Promise.reject(new Error('Remote SSH is not available in web mode')),
+    addRemoteProject:      ()                   => Promise.reject(new Error('Remote SSH is not available in web mode')),
+    syncRemoteHost:        ()                   => Promise.reject(new Error('Remote SSH is not available in web mode')),
+    remoteBrowse:          ()                   => Promise.reject(new Error('Remote SSH is not available in web mode')),
+    writeSshConfig:        ()                   => Promise.reject(new Error('Remote SSH is not available in web mode')),
+    remoteConnectStart:    ()                   => Promise.reject(new Error('Remote SSH is not available in web mode')),
+    remoteConnectInput:    ()                   => {},
+    remoteConnectCancel:   ()                   => Promise.resolve(null),
+    onRemoteConnectData:   ()                   => {},
+    onRemoteConnectExit:   ()                   => {},
 
     // Settings
     getSetting:            (k)                  => invoke('get-setting', k),
