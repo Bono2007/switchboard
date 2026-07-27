@@ -96,7 +96,8 @@
     <button id="update-restart-btn">Restart</button>
     <button id="update-dismiss-btn">Later</button>
   </div>
-  <div id="status-bar"><span id="status-bar-info"></span><span id="status-bar-activity"></span><span id="status-bar-updater"></span></div>
+  <div id="status-bar"><span id="status-bar-info"></span><span id="status-bar-quota" style="display:none;"><span class="quota-track"><span class="quota-fill"></span></span><span class="quota-pct"></span></span><span id="status-bar-ctx" style="display:none;"><span class="ctx-track"><span class="ctx-fill"></span></span><span class="ctx-text"></span></span><span id="status-bar-activity"></span><span id="status-bar-updater"></span></div>
+  <script src="web-api.js"></script>
   <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
   <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
   <script src="../node_modules/@xterm/addon-web-links/lib/addon-web-links.js"></script>
@@ -105,6 +106,10 @@
   <script src="../node_modules/@xterm/addon-webgl/lib/addon-webgl.js"></script>
   <script src="../node_modules/morphdom/dist/morphdom-umd.js"></script>
   <script src="codemirror-bundle.js"></script>
+  <!-- i18n must load before any script that calls t() at definition time. -->
+  <script src="i18n.js"></script>
+  <script src="tooltips.js"></script>
+  <script src="locales/fr.js"></script>
   <script src="icons.js"></script>
   <script src="viewer-toolbar.js"></script>
   <script src="viewer-panel.js"></script>

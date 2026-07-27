@@ -34,6 +34,9 @@ function flashButtonText(btn, text, duration = 1200) {
   }
 }
 
+// Tooltips (setTooltip / attachTooltips) live in tooltips.js — one delegated
+// listener on <body> covers every toolbar, so nothing needs wiring up here.
+
 /**
  * Toggle markdown preview for a viewer.
  */
@@ -44,14 +47,14 @@ function toggleMarkdownPreview({ editorEl, previewEl, toggleBtn, editorView, isP
     editorEl.style.display = 'none';
     previewEl.style.display = 'block';
     toggleBtn.classList.add('active');
-    toggleBtn.title = 'Back to editor';
+    setTooltip(toggleBtn, t('Back to editor'));
     if (storageKey) localStorage.setItem(storageKey, 'true');
     return true;
   } else {
     previewEl.style.display = 'none';
     editorEl.style.display = '';
     toggleBtn.classList.remove('active');
-    toggleBtn.title = 'Toggle markdown preview';
+    setTooltip(toggleBtn, t('Toggle markdown preview'));
     if (storageKey) localStorage.setItem(storageKey, 'false');
     return false;
   }
@@ -106,7 +109,7 @@ function createViewerToolbar(opts = {}) {
   if (opts.copyPath) {
     copyPathBtn = document.createElement('button');
     copyPathBtn.className = 'viewer-toolbar-copy-path';
-    copyPathBtn.title = 'Copy file path';
+    setTooltip(copyPathBtn, t('Copy file path'));
     copyPathBtn.innerHTML = COPY_ICON;
     infoEl.appendChild(copyPathBtn);
   }
@@ -129,7 +132,7 @@ function createViewerToolbar(opts = {}) {
     previewBtn = document.createElement('button');
     previewBtn.className = 'fp-toolbar-btn fp-icon-btn';
     previewBtn.innerHTML = PREVIEW_ICON;
-    previewBtn.title = 'Toggle markdown preview';
+    setTooltip(previewBtn, t('Toggle markdown preview'));
     controlsEl.appendChild(previewBtn);
   }
 
@@ -138,7 +141,7 @@ function createViewerToolbar(opts = {}) {
     copyContentBtn = document.createElement('button');
     copyContentBtn.className = 'fp-toolbar-btn fp-icon-btn';
     copyContentBtn.innerHTML = COPY_ICON;
-    copyContentBtn.title = 'Copy raw content';
+    setTooltip(copyContentBtn, t('Copy raw content'));
     controlsEl.appendChild(copyContentBtn);
   }
 
@@ -146,7 +149,7 @@ function createViewerToolbar(opts = {}) {
   if (opts.wrap) {
     wrapBtn = document.createElement('button');
     wrapBtn.className = 'fp-toolbar-btn fp-icon-btn';
-    wrapBtn.title = 'Toggle line wrapping';
+    setTooltip(wrapBtn, t('Toggle line wrapping'));
     wrapBtn.innerHTML = WRAP_ICON;
     controlsEl.appendChild(wrapBtn);
   }
@@ -155,7 +158,7 @@ function createViewerToolbar(opts = {}) {
   if (opts.gotoLine) {
     gotoLineBtn = document.createElement('button');
     gotoLineBtn.className = 'fp-toolbar-btn fp-icon-btn';
-    gotoLineBtn.title = 'Go to line (Cmd+G)';
+    setTooltip(gotoLineBtn, t('Go to line (Cmd+G)'));
     gotoLineBtn.innerHTML = GOTO_LINE_ICON;
     controlsEl.appendChild(gotoLineBtn);
   }
@@ -164,7 +167,7 @@ function createViewerToolbar(opts = {}) {
   if (opts.save) {
     saveBtn = document.createElement('button');
     saveBtn.className = 'fp-toolbar-btn fp-save-btn fp-icon-btn';
-    saveBtn.title = 'Save changes';
+    setTooltip(saveBtn, t('Save changes'));
     saveBtn.innerHTML = SAVE_ICON;
     controlsEl.appendChild(saveBtn);
   }
@@ -174,7 +177,7 @@ function createViewerToolbar(opts = {}) {
     closeBtn = document.createElement('button');
     closeBtn.className = 'fp-toolbar-btn fp-close-btn fp-icon-btn';
     closeBtn.innerHTML = CLOSE_ICON;
-    closeBtn.title = 'Close panel';
+    setTooltip(closeBtn, t('Close panel'));
     controlsEl.appendChild(closeBtn);
   }
 
@@ -200,7 +203,7 @@ function createViewerToolbar(opts = {}) {
     setPreviewMode(active) {
       if (!previewBtn) return;
       previewBtn.classList.toggle('active', active);
-      previewBtn.title = active ? 'Back to editor' : 'Toggle markdown preview';
+      setTooltip(previewBtn, active ? t('Back to editor') : t('Toggle markdown preview'));
     },
 
     setWrapMode(active) {

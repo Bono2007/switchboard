@@ -4,22 +4,22 @@
 > Le reste de ce README décrit l'application telle que l'amont la documente ;
 > cette section décrit ce qui diffère ici.
 
-**Attention : le code de ce fork n'est pas sur `main`.** Cette branche est
-identique à l'amont. Tout le travail vit sur
-[`feature/remote-web-gauges`](https://github.com/Bono2007/switchboard/tree/feature/remote-web-gauges),
-et c'est de là qu'est construite la release.
+Le travail est développé sur
+[`feature/remote-web-gauges`](https://github.com/Bono2007/switchboard/tree/feature/remote-web-gauges)
+puis fusionné ici. `main` diverge donc de l'amont — c'est délibéré, et c'est de
+ce code qu'est construite la release.
 
 ## Ce que ce fork ajoute
 
 **Statut des sessions par hooks.** L'amont devine l'activité d'une session en
 lisant le titre du terminal. Ici, Claude Code la signale lui-même via un hook
 installé dans `~/.claude/settings.json`, et le titre n'est plus qu'un repli.
-Voir [`docs/agent-status-hooks.md`](https://github.com/Bono2007/switchboard/blob/feature/remote-web-gauges/docs/agent-status-hooks.md).
+Voir [`docs/agent-status-hooks.md`](docs/agent-status-hooks.md).
 
 **Quatre pull requests amont intégrées** — #78 (sessions SSH distantes), #28
 (mode web), #72 (jauges de contexte et de quota dans la barre d'état), #58
 (bannière de sortie). Plus les correctifs d'intégration nécessaires pour
-qu'elles cohabitent. Voir [`docs/remote-web-gauges.md`](https://github.com/Bono2007/switchboard/blob/feature/remote-web-gauges/docs/remote-web-gauges.md).
+qu'elles cohabitent. Voir [`docs/remote-web-gauges.md`](docs/remote-web-gauges.md).
 
 **Traduction française** de l'interface, suivant la langue du système.
 
@@ -44,7 +44,6 @@ refuse de l'ouvrir : clic droit → Ouvrir.
 ## Construire soi-même
 
 ```bash
-git checkout feature/remote-web-gauges
 npm install
 npm run bundle:codemirror
 CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac dmg zip --arm64 \
@@ -118,6 +117,16 @@ Switchboard monitors all your sessions in the background and shows status indica
 - **Waiting for input** — A session that needs your response is highlighted so you don't miss it.
 - **Permission approval** — When Claude is blocked waiting for a permission grant, the session badge lets you know immediately.
 - **Activity indicators** — See which sessions are actively running, idle, or finished.
+
+Those signals come from the CLI itself. Switchboard installs a hook in
+`~/.claude/settings.json` that reports when a turn starts, needs you, or
+finishes, so a badge changes on the event rather than on a guess. Reading the
+terminal title remains as a fallback for sessions that are not hooked.
+
+Hooks you configured yourself are never modified, and **Settings → Agent
+Status** shows whether the hook is live, with a Test button that exercises the
+whole delivery path. See [docs/agent-status-hooks.md](docs/agent-status-hooks.md)
+for the arbitration rules, the wire protocol, and troubleshooting.
 
 ## Editor
 
@@ -231,7 +240,10 @@ main.js            Electron main process
 preload.js         Context bridge (IPC bindings)
 db.js              SQLite session cache & metadata
 public/            Renderer (HTML/CSS/JS)
+agent-hooks/       Agent status: protocol, state machine, socket, installer
+bin/               The hook client Claude Code runs
 scripts/           Build & postinstall scripts
 build/             Icons, entitlements, builder resources
+docs/              Feature documentation
 .github/workflows/ CI/CD
 ```

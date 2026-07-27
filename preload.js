@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
   openTerminal: (id, projectPath, isNew, sessionOptions) => ipcRenderer.invoke('open-terminal', id, projectPath, isNew, sessionOptions),
   search: (type, query, titleOnly) => ipcRenderer.invoke('search', type, query, titleOnly),
   readSessionJsonl: (sessionId) => ipcRenderer.invoke('read-session-jsonl', sessionId),
+  getSessionTokens: (sessionId) => ipcRenderer.invoke('get-session-tokens', sessionId),
 
   // Settings
   getSetting: (key) => ipcRenderer.invoke('get-setting', key),
@@ -32,6 +33,20 @@ contextBridge.exposeInMainWorld('api', {
   runScheduleNow: (filePath) => ipcRenderer.invoke('run-schedule-now', filePath),
   getShellProfiles: () => ipcRenderer.invoke('get-shell-profiles'),
 
+  // Remote SSH hosts + projects
+  getRemoteTargets: () => ipcRenderer.invoke('get-remote-targets'),
+  saveRemoteHosts: (hosts) => ipcRenderer.invoke('save-remote-hosts', hosts),
+  testRemoteHost: (hostId) => ipcRenderer.invoke('test-remote-host', hostId),
+  addRemoteProject: (opts) => ipcRenderer.invoke('add-remote-project', opts),
+  syncRemoteHost: (hostId) => ipcRenderer.invoke('sync-remote-host', hostId),
+  remoteBrowse: (opts) => ipcRenderer.invoke('remote-browse', opts),
+  writeSshConfig: (host) => ipcRenderer.invoke('write-ssh-config', host),
+  remoteConnectStart: (hostId) => ipcRenderer.invoke('remote-connect-start', hostId),
+  remoteConnectInput: (connectId, data) => ipcRenderer.send('remote-connect-input', connectId, data),
+  remoteConnectCancel: (connectId) => ipcRenderer.invoke('remote-connect-cancel', connectId),
+  onRemoteConnectData: (callback) => ipcRenderer.on('remote-connect-data', (_e, id, data) => callback(id, data)),
+  onRemoteConnectExit: (callback) => ipcRenderer.on('remote-connect-exit', (_e, id, code) => callback(id, code)),
+
   browseFolder: () => ipcRenderer.invoke('browse-folder'),
   addProject: (projectPath) => ipcRenderer.invoke('add-project', projectPath),
   removeProject: (projectPath) => ipcRenderer.invoke('remove-project', projectPath),
@@ -41,6 +56,12 @@ contextBridge.exposeInMainWorld('api', {
   sendInput: (id, data) => ipcRenderer.send('terminal-input', id, data),
   resizeTerminal: (id, cols, rows) => ipcRenderer.send('terminal-resize', id, cols, rows),
   closeTerminal: (id) => ipcRenderer.send('close-terminal', id),
+
+  // Agent status hooks
+  agentHooksHealth:  ()  => ipcRenderer.invoke('agent-hooks-health'),
+  agentHooksRefresh: ()  => ipcRenderer.invoke('agent-hooks-refresh'),
+  agentHooksTest:    ()  => ipcRenderer.invoke('agent-hooks-test'),
+  agentHooksLog:     ()  => ipcRenderer.invoke('agent-hooks-log'),
 
   // Listeners (main → renderer)
   onTerminalData: (callback) => {

@@ -101,13 +101,13 @@ function initFilePanel() {
   diffToggleBtn = document.createElement('button');
   diffToggleBtn.className = 'fp-toolbar-btn';
   diffToggleBtn.textContent = diffMode === 'inline' ? 'Side-by-Side' : 'Inline';
-  diffToggleBtn.title = diffMode === 'inline' ? 'Switch to side-by-side diff' : 'Switch to inline diff';
+  setTooltip(diffToggleBtn, diffMode === 'inline' ? t('Switch to side-by-side diff') : t('Switch to inline diff'));
   diffToggleBtn.addEventListener('click', handleDiffModeToggle);
   diffControls.appendChild(diffToggleBtn);
 
   const diffSaveBtn = document.createElement('button');
   diffSaveBtn.className = 'fp-toolbar-btn fp-save-btn fp-icon-btn';
-  diffSaveBtn.title = 'Save changes';
+  setTooltip(diffSaveBtn, t('Save changes'));
   diffSaveBtn.innerHTML = '<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 448 512" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM272 80v80H144V80h128zm122 352H54a6 6 0 0 1-6-6V86a6 6 0 0 1 6-6h42v104c0 13.255 10.745 24 24 24h176c13.255 0 24-10.745 24-24V83.882l78.243 78.243a6 6 0 0 1 1.757 4.243V426a6 6 0 0 1-6 6zM224 232c-48.523 0-88 39.477-88 88s39.477 88 88 88 88-39.477 88-88-39.477-88-88-88zm0 128c-22.056 0-40-17.944-40-40s17.944-40 40-40 40 17.944 40 40-17.944 40-40 40z"></path></svg>';
   diffSaveBtn.addEventListener('click', handleDiffSave);
   diffControls.appendChild(diffSaveBtn);
@@ -115,7 +115,7 @@ function initFilePanel() {
   const diffCloseBtn = document.createElement('button');
   diffCloseBtn.className = 'fp-toolbar-btn fp-close-btn fp-icon-btn';
   diffCloseBtn.innerHTML = '<svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M400 145.49 366.51 112 256 222.51 145.49 112 112 145.49 222.51 256 112 366.51 145.49 400 256 289.49 366.51 400 400 366.51 289.49 256 400 145.49z"></path></svg>';
-  diffCloseBtn.title = 'Close panel';
+  setTooltip(diffCloseBtn, t('Close panel'));
   diffCloseBtn.addEventListener('click', handleClose);
   diffControls.appendChild(diffCloseBtn);
 
@@ -188,7 +188,7 @@ function handleDiffModeToggle() {
   diffMode = diffMode === 'inline' ? 'side-by-side' : 'inline';
   localStorage.setItem(DIFF_MODE_KEY, diffMode);
   diffToggleBtn.textContent = diffMode === 'inline' ? 'Side-by-Side' : 'Inline';
-  diffToggleBtn.title = diffMode === 'inline' ? 'Switch to side-by-side diff' : 'Switch to inline diff';
+  setTooltip(diffToggleBtn, diffMode === 'inline' ? t('Switch to side-by-side diff') : t('Switch to inline diff'));
 
   if (currentPanelSessionId) {
     const state = getSessionState(currentPanelSessionId);

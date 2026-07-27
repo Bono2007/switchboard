@@ -59,6 +59,7 @@ function setActiveSession(id) {
   else sessionStorage.removeItem('activeSessionId');
   // Update file panel to show this session's open files/diffs
   if (typeof switchPanel === 'function') switchPanel(id);
+  refreshCtxGauge(id);
 }
 // Persist slug group expand state across reloads
 function getExpandedSlugs() {
@@ -270,22 +271,38 @@ window.api.onProcessExited((sessionId, exitCode) => {
   const session = sessionMap.get(sessionId);
   if (entry) {
     entry.closed = true;
+    // Write a visible exit banner so the user can see when the process ended
+    // and read any error output it printed (claude / devbox / shell stderr).
+    // Without this, a fast-failing pre-launch command would tear down the
+    // terminal before the user could read the error.
+    try {
+      const colour = exitCode === 0 ? '\x1b[2m' : '\x1b[33m';
+      entry.terminal.write(
+        `\r\n${colour}── session exited (code ${exitCode}) — re-click this session in the sidebar to relaunch, or click another to dismiss ──\x1b[0m\r\n`
+      );
+    } catch {}
   }
 
-  // Clean up terminal UI on exit (uses destroySession to handle grid cards too)
-  if (entry) {
-    destroySession(sessionId);
-  }
-  if (gridViewActive) {
-    gridViewerCount.textContent = gridCards.size + ' session' + (gridCards.size !== 1 ? 's' : '');
-  } else if (activeSessionId === sessionId) {
-    setActiveSession(null);
-    terminalHeader.style.display = 'none';
-    placeholder.style.display = '';
-  }
-
-  // Plain terminal sessions: remove from sidebar entirely (ephemeral)
-  if (session?.type === 'terminal') {
+  // Plain terminal sessions are ephemeral — destroy immediately and remove from
+  // the sidebar. Claude sessions stay mounted (see below) so the user can read
+  // the exit reason.
+  //
+  // Remote sessions are all tagged type:'terminal' by launchRemoteSession, so a
+  // remote *Claude* session would be torn down here and its error lost — which is
+  // exactly the case the banner exists for, since a missing or unresolvable remote
+  // `claude` exits instantly with code 127. Distinguish on remoteMode, matching
+  // the isRemoteClaude predicate in sidebar.js. Remote shells stay ephemeral like
+  // local ones.
+  const isRemoteClaude = !!session?.remote && session.remoteMode !== 'shell';
+  if (session?.type === 'terminal' && !isRemoteClaude) {
+    if (entry) destroySession(sessionId);
+    if (gridViewActive) {
+      gridViewerCount.textContent = gridCards.size + ' session' + (gridCards.size !== 1 ? 's' : '');
+    } else if (activeSessionId === sessionId) {
+      setActiveSession(null);
+      terminalHeader.style.display = 'none';
+      placeholder.style.display = '';
+    }
     pendingSessions.delete(sessionId);
     for (const projList of [cachedProjects, cachedAllProjects]) {
       for (const proj of projList) {
@@ -298,17 +315,16 @@ window.api.onProcessExited((sessionId, exitCode) => {
     return;
   }
 
-  // Clean up no-op pending sessions (never created a .jsonl)
-  if (pendingSessions.has(sessionId)) {
-    pendingSessions.delete(sessionId);
-    // Remove from cached project data
-    for (const projList of [cachedProjects, cachedAllProjects]) {
-      for (const proj of projList) {
-        proj.sessions = proj.sessions.filter(s => s.sessionId !== sessionId);
-      }
-    }
-    sessionMap.delete(sessionId);
-    refreshSidebar();
+  // Claude sessions: keep the terminal mounted with the exit banner visible so
+  // the user can read what happened. Cleanup is deferred — openSession destroys
+  // the closed entry when the user re-clicks the session (existing behavior).
+  // If the session was pending (no .jsonl was written), leave the sidebar
+  // entry in place too so the user has somewhere to relaunch from; it'll be
+  // tidied up by the regular pending-reconciliation pass once it's clear no
+  // real session file is coming.
+
+  if (gridViewActive) {
+    gridViewerCount.textContent = gridCards.size + ' session' + (gridCards.size !== 1 ? 's' : '');
   }
 
   pollActiveSessions();
@@ -341,6 +357,7 @@ window.api.onTerminalNotification((sessionId, message) => {
 // --- CLI busy state (OSC 0 title spinner detection) ---
 window.api.onCliBusyState((sessionId, busy) => {
   setActivity(sessionId, busy);
+  if (!busy && sessionId === activeSessionId) refreshCtxGauge(sessionId);
 });
 
 // --- Single entry point for all sidebar renders ---
@@ -494,8 +511,10 @@ searchInput.addEventListener('input', () => {
         refreshSidebar({ resort: true });
       } else if (activeTab === 'plans') {
         const results = await window.api.search('plan', query, searchTitlesOnly);
+        // Indexed under the full path now that a filename is no longer unique
+        // across projects.
         const matchIds = new Set(results.map(r => r.id));
-        renderPlans(cachedPlans.filter(p => matchIds.has(p.filename)));
+        renderPlans(cachedPlans.filter(p => matchIds.has(p.path)));
       } else if (activeTab === 'memory') {
         const results = await window.api.search('memory', query, searchTitlesOnly);
         const matchIds = new Set(results.map(r => r.id));
@@ -770,6 +789,16 @@ async function showTerminalHeader(session) {
 
 // Terminal lifecycle (createTerminalEntry, destroySession, showSession, setupDragAndDrop) → terminal-manager.js
 
+// Derive the remote directory from an ssh://<label>/<dir> project path, which is
+// always present on a remote session even when remotePath is not.
+function remoteDirFromProjectPath(projectPath, explicit) {
+  if (explicit) return explicit;
+  if (typeof projectPath !== 'string' || !projectPath.startsWith('ssh://')) return '~';
+  const rest = projectPath.slice('ssh://'.length);
+  const slash = rest.indexOf('/');
+  return slash === -1 ? '~' : (rest.slice(slash + 1) || '~');
+}
+
 async function openSession(session, customOptions) {
   const { sessionId, projectPath } = session;
 
@@ -778,7 +807,23 @@ async function openSession(session, customOptions) {
     const entry = openSessions.get(sessionId);
     if (entry.closed) {
       destroySession(sessionId);
-      if (session.type === 'terminal') {
+      // A remote session has to relaunch on its host. It is tagged
+      // type:'terminal' like a local plain terminal, so without this it would
+      // fall into the branch below and spawn a LOCAL shell in a directory
+      // literally named "ssh://host/dir", which does not exist.
+      if (session.remote) {
+        const hostId = session.hostId || session.source;
+        // Still pending means it never wrote a transcript on the host, so there
+        // is no session to --resume: relaunch fresh rather than fail on an
+        // unknown id. Anything else falls through to the resume path below.
+        if (hostId && pendingSessions.has(sessionId)) {
+          launchRemoteSession({ id: hostId, label: session.remoteLabel || hostId }, {
+            remoteMode: session.remoteMode === 'shell' ? 'shell' : 'claude',
+            remoteDir: remoteDirFromProjectPath(projectPath, session.remotePath),
+          });
+          return;
+        }
+      } else if (session.type === 'terminal') {
         launchTerminalSession({ projectPath: session.projectPath });
         return;
       }
@@ -788,11 +833,25 @@ async function openSession(session, customOptions) {
     }
   }
 
+  // Remote past session: resume it in a terminal on the host — same UI and
+  // behavior as clicking a local session (which auto-resumes via `claude --resume`).
+  let remoteResumeOptions = null;
+  if (session.remote && session.remoteMode !== 'shell') {
+    // Resume lands in the session's own directory even when the session object
+    // is missing remotePath.
+    remoteResumeOptions = {
+      remoteHostId: session.hostId || session.source,
+      remoteMode: 'claude',
+      remoteDir: remoteDirFromProjectPath(projectPath, session.remotePath),
+      resume: sessionId,
+    };
+  }
+
   // Create new terminal entry (hidden until showSession)
   const entry = createTerminalEntry(session);
 
   // Open terminal in main process
-  const resumeOptions = customOptions || await resolveDefaultSessionOptions({ projectPath });
+  const resumeOptions = customOptions || remoteResumeOptions || await resolveDefaultSessionOptions({ projectPath });
   const result = await window.api.openTerminal(sessionId, projectPath, false, resumeOptions);
   if (!result.ok) {
     entry.terminal.write(`\r\nError: ${result.error}\r\n`);
@@ -1126,5 +1185,54 @@ const updaterHandler = (type, data) => {
 };
 window.api.onUpdaterEvent(updaterHandler);
 
+// --- Context window gauge in status bar ---
+const ctxGaugeEl = document.getElementById('status-bar-ctx');
+const CTX_MAX = 200000;
+function fmtTokens(n) { return n >= 1000 ? Math.round(n / 1000) + 'K' : String(n); }
+async function refreshCtxGauge(sessionId) {
+  if (!sessionId) { ctxGaugeEl.style.display = 'none'; return; }
+  try {
+    const result = await window.api.getSessionTokens(sessionId);
+    if (!result) { ctxGaugeEl.style.display = 'none'; return; }
+    const { contextTokens } = result;
+    const pct = Math.round((contextTokens / CTX_MAX) * 100);
+    ctxGaugeEl.style.display = '';
+    ctxGaugeEl.title = `Context : ${fmtTokens(contextTokens)} / ${fmtTokens(CTX_MAX)} tokens (${pct}%)`;
+    const fill = ctxGaugeEl.querySelector('.ctx-fill');
+    fill.style.width = Math.min(Math.max(pct, 1), 100) + '%';
+    fill.className = 'ctx-fill' + (pct >= 80 ? ' ctx-high' : pct >= 60 ? ' ctx-mid' : '');
+    ctxGaugeEl.querySelector('.ctx-text').textContent = fmtTokens(contextTokens) + ' / 200K';
+  } catch {}
+}
+
+// --- Quota gauge (5h session) in status bar ---
+const quotaGaugeEl = document.getElementById('status-bar-quota');
+async function refreshQuotaGauge() {
+  try {
+    const usage = await window.api.getUsage();
+    const pct = usage?.session;
+    const reset = usage?.sessionReset;
+    if (pct === undefined) { quotaGaugeEl.style.display = 'none'; return; }
+    quotaGaugeEl.style.display = '';
+    quotaGaugeEl.title = `5h quota : ${pct}%${reset ? ' — Resets ' + reset : ''}`;
+    const fill = quotaGaugeEl.querySelector('.quota-fill');
+    fill.style.width = Math.max(pct, 1) + '%';
+    fill.className = 'quota-fill' + (pct >= 80 ? ' quota-high' : pct >= 60 ? ' quota-mid' : '');
+    quotaGaugeEl.querySelector('.quota-pct').textContent = pct + '%';
+  } catch {}
+}
+refreshQuotaGauge();
+setInterval(refreshQuotaGauge, 5 * 60 * 1000);
+quotaGaugeEl.addEventListener('click', () => {
+  document.querySelector('.sidebar-tab[data-tab="stats"]')?.click();
+});
+
 // --- Initialize file panel (MCP bridge UI) ---
 if (typeof initFilePanel === 'function') initFilePanel();
+
+// --- Tooltips and static text ---
+// One delegated listener on <body> covers every button, including those
+// rendered later; native title attributes are adopted and translated on
+// first hover, so no call site needs changing.
+if (typeof attachTooltips === 'function') attachTooltips(document.body);
+if (typeof translateStaticDom === 'function') translateStaticDom(document);
