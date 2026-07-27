@@ -56,21 +56,33 @@
   }
 
   // Text baked into index.html. Titles are handled lazily by the tooltip layer,
-  // which translates them on first hover, so only placeholders and these few
-  // labelled elements need an explicit pass. Keys are their English text, same
-  // convention as everywhere else.
-  const STATIC_TEXT_IDS = [
-    'stats-viewer-title', 'settings-viewer-title', 'jsonl-viewer-title',
-    'grid-viewer-title', 'update-toast-msg', 'update-restart-btn', 'update-dismiss-btn',
-  ];
+  // which translates them on first hover; this covers the rest.
+  //
+  // Walks text nodes and substitutes only those whose exact trimmed content is a
+  // key in the catalogue. Deliberately not a list of element ids — maintaining
+  // one means every new label silently ships untranslated until someone notices,
+  // which is exactly how "Select a session from the sidebar to begin." got
+  // missed. Matching on known keys can't touch dynamic content, since a string
+  // has to be in the catalogue to be replaced at all.
+  const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'SVG', 'TEXTAREA', 'CODE', 'PRE']);
 
   function translateStaticDom(root) {
     const scope = root || document;
-    for (const id of STATIC_TEXT_IDS) {
-      const el = scope.getElementById && scope.getElementById(id);
-      if (el && el.textContent.trim()) el.textContent = t(el.textContent.trim());
+    const cat = catalogue();
+    const walker = document.createTreeWalker(scope.body || scope, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (SKIP_TAGS.has(node.parentNode && node.parentNode.nodeName)) return NodeFilter.FILTER_REJECT;
+        const text = node.nodeValue.trim();
+        return text && cat[text] ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      },
+    });
+    const pending = [];
+    while (walker.nextNode()) pending.push(walker.currentNode);
+    for (const node of pending) {
+      // Preserve the surrounding whitespace, which carries the HTML formatting.
+      node.nodeValue = node.nodeValue.replace(node.nodeValue.trim(), cat[node.nodeValue.trim()]);
     }
-    for (const el of scope.querySelectorAll('[placeholder]')) {
+    for (const el of (scope.querySelectorAll ? scope.querySelectorAll('[placeholder]') : [])) {
       const p = el.getAttribute('placeholder');
       if (p) el.setAttribute('placeholder', t(p));
     }

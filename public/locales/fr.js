@@ -202,4 +202,8 @@ window.registerLocale('fr', {
   'Close panel': 'Fermer le panneau',
   'Switch to side-by-side diff': 'Passer au diff côte à côte',
   'Switch to inline diff': 'Passer au diff en ligne',
+  'Select a session from the sidebar to begin.':
+    'Sélectionnez une session dans la barre latérale pour commencer.',
+  'Click the Stats tab to view activity heatmap.':
+    "Cliquez sur l'onglet Statistiques pour voir la carte d'activité.",
 });
