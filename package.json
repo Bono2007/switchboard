@@ -60,6 +60,8 @@
       "*.js",
       "workers/**/*",
       "public/**/*",
+      "agent-hooks/**/*",
+      "bin/**/*",
       "node_modules/**/*"
     ],
     "asarUnpack": [
