@@ -1565,6 +1565,42 @@ body { display: flex; flex-direction: column; }
   font-size: 13px;
 }
 
+.plans-empty-title {
+  color: #9a9ab0;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.plans-empty-hint {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.plans-empty-dirs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  color: #7a7a90;
+  word-break: break-all;
+}
+
+.plans-empty-dirs li {
+  margin-top: 3px;
+}
+
+/* Which project a plan came from, when it lives in that project's own
+   plansDirectory rather than the shared ~/.claude/plans. */
+.plan-project-badge {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #2f2f42;
+  color: #9a9ab0;
+  font-size: 10px;
+}
+
 /* ---- Plan viewer ---- */
 #plan-viewer {
   position: absolute;

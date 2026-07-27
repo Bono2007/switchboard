@@ -74,7 +74,7 @@ const {
 } = require('./db');
 
 const PROJECTS_DIR = path.join(os.homedir(), '.claude', 'projects');
-const PLANS_DIR = path.join(os.homedir(), '.claude', 'plans');
+const plansDirs = require('./plans-dirs');
 const CLAUDE_DIR = path.join(os.homedir(), '.claude');
 const STATS_CACHE_PATH = path.join(CLAUDE_DIR, 'stats-cache.json');
 const MAX_BUFFER_SIZE = 256 * 1024;
@@ -441,47 +441,83 @@ ipcMain.handle('get-projects', (_event, showArchived) => {
   }
 });
 
-// --- IPC: get-plans ---
-ipcMain.handle('get-plans', () => {
+// --- Plans directories ---
+// Claude Code's plansDirectory is per-project, so there is no single plans
+// folder: ~/.claude/plans is only the fallback. Recomputed on each call so a
+// project that configures the setting shows up without restarting the app.
+function readJsonSafe(filePath) {
+  try { return JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return null; }
+}
+
+function currentPlansDirs() {
+  let projectPaths = [];
   try {
-    if (!fs.existsSync(PLANS_DIR)) return [];
-    const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.md'));
+    projectPaths = [...getAllFolderMeta().values()].map(m => m && m.projectPath).filter(Boolean);
+  } catch {}
+  return plansDirs.collectPlansDirs({ homeDir: os.homedir(), projectPaths, readJson: readJsonSafe });
+}
+
+// Resolve what the renderer asked for into an absolute path it is allowed to
+// touch, or null. Bare filenames stay supported for the shared directory.
+function resolvePlanPath(target, dirs) {
+  const raw = String(target || '');
+  if (!raw) return null;
+  const candidate = path.isAbsolute(raw)
+    ? path.resolve(raw)
+    : path.join(plansDirs.defaultPlansDir(os.homedir()), path.basename(raw));
+  return plansDirs.isAllowedPlanPath(candidate, dirs) ? candidate : null;
+}
+
+// --- IPC: get-plans ---
+// Returns { plans, dirs } rather than a bare array: the renderer needs the
+// directories it actually scanned so the empty state can name them instead of
+// claiming a hardcoded path.
+ipcMain.handle('get-plans', () => {
+  const dirs = currentPlansDirs();
+  try {
     const plans = [];
-    for (const file of files) {
-      const filePath = path.join(PLANS_DIR, file);
-      try {
-        const stat = fs.statSync(filePath);
-        const content = fs.readFileSync(filePath, 'utf8');
-        const firstLine = content.split('\n').find(l => l.trim());
-        const title = firstLine && firstLine.startsWith('# ')
-          ? firstLine.slice(2).trim()
-          : file.replace(/\.md$/, '');
-        plans.push({ filename: file, title, modified: stat.mtime.toISOString() });
-      } catch {}
+    for (const { dir, project } of dirs) {
+      if (!fs.existsSync(dir)) continue;
+      let files = [];
+      try { files = fs.readdirSync(dir).filter(f => f.endsWith('.md')); } catch { continue; }
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        try {
+          const stat = fs.statSync(filePath);
+          const content = fs.readFileSync(filePath, 'utf8');
+          const firstLine = content.split('\n').find(l => l.trim());
+          const title = firstLine && firstLine.startsWith('# ')
+            ? firstLine.slice(2).trim()
+            : file.replace(/\.md$/, '');
+          plans.push({ filename: file, path: filePath, project, title, modified: stat.mtime.toISOString() });
+        } catch {}
+      }
     }
     plans.sort((a, b) => new Date(b.modified) - new Date(a.modified));
 
-    // Index plans for FTS
+    // Index plans for FTS. The id is the full path, not the filename: the same
+    // plan name can now exist in several projects.
     try {
       deleteSearchType('plan');
       upsertSearchEntries(plans.map(p => ({
-        id: p.filename, type: 'plan', folder: null,
+        id: p.path, type: 'plan', folder: null,
         title: p.title,
-        body: fs.readFileSync(path.join(PLANS_DIR, p.filename), 'utf8'),
+        body: fs.readFileSync(p.path, 'utf8'),
       })));
     } catch {}
 
-    return plans;
+    return { plans, dirs: dirs.map(d => d.dir) };
   } catch (err) {
     console.error('Error reading plans:', err);
-    return [];
+    return { plans: [], dirs: dirs.map(d => d.dir) };
   }
 });
 
 // --- IPC: read-plan ---
-ipcMain.handle('read-plan', (_event, filename) => {
+ipcMain.handle('read-plan', (_event, target) => {
   try {
-    const filePath = path.join(PLANS_DIR, path.basename(filename));
+    const filePath = resolvePlanPath(target, currentPlansDirs());
+    if (!filePath) return { content: '', filePath: '', error: 'path outside plans directories' };
     const content = fs.readFileSync(filePath, 'utf8');
     return { content, filePath };
   } catch (err) {
@@ -493,10 +529,8 @@ ipcMain.handle('read-plan', (_event, filename) => {
 // --- IPC: save-plan ---
 ipcMain.handle('save-plan', (_event, filePath, content) => {
   try {
-    const resolved = path.resolve(filePath);
-    if (!resolved.startsWith(PLANS_DIR)) {
-      return { ok: false, error: 'path outside plans directory' };
-    }
+    const resolved = resolvePlanPath(filePath, currentPlansDirs());
+    if (!resolved) return { ok: false, error: 'path outside plans directories' };
     fs.writeFileSync(resolved, content, 'utf8');
     return { ok: true };
   } catch (err) {

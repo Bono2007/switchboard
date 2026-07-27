@@ -64,7 +64,7 @@ const { deriveProjectPath } = require('./derive-project-path');
 // ── Constants ────────────────────────────────────────────────────────
 
 const PROJECTS_DIR  = path.join(os.homedir(), '.claude', 'projects');
-const PLANS_DIR     = path.join(os.homedir(), '.claude', 'plans');
+const plansDirs     = require('./plans-dirs');
 const CLAUDE_DIR    = path.join(os.homedir(), '.claude');
 const STATS_CACHE_PATH = path.join(CLAUDE_DIR, 'stats-cache.json');
 const MAX_BUFFER_SIZE  = 256 * 1024;
@@ -207,46 +207,74 @@ function handleGetProjects(showArchived) {
   }
 }
 
-function handleGetPlans() {
+// Mirrors main.js: plansDirectory is per-project, so ~/.claude/plans is only the
+// fallback and the set of directories is recomputed on each call.
+function readJsonSafe(filePath) {
+  try { return JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return null; }
+}
+
+function currentPlansDirs() {
+  let projectPaths = [];
   try {
-    if (!fs.existsSync(PLANS_DIR)) return [];
-    const files = fs.readdirSync(PLANS_DIR).filter(f => f.endsWith('.md'));
+    projectPaths = [...getAllFolderMeta().values()].map(m => m && m.projectPath).filter(Boolean);
+  } catch {}
+  return plansDirs.collectPlansDirs({ homeDir: os.homedir(), projectPaths, readJson: readJsonSafe });
+}
+
+function resolvePlanPath(target, dirs) {
+  const raw = String(target || '');
+  if (!raw) return null;
+  const candidate = path.isAbsolute(raw)
+    ? path.resolve(raw)
+    : path.join(plansDirs.defaultPlansDir(os.homedir()), path.basename(raw));
+  return plansDirs.isAllowedPlanPath(candidate, dirs) ? candidate : null;
+}
+
+function handleGetPlans() {
+  const dirs = currentPlansDirs();
+  try {
     const plans = [];
-    for (const file of files) {
-      const filePath = path.join(PLANS_DIR, file);
-      try {
-        const stat = fs.statSync(filePath);
-        const content = fs.readFileSync(filePath, 'utf8');
-        const firstLine = content.split('\n').find(l => l.trim());
-        const title = firstLine && firstLine.startsWith('# ')
-          ? firstLine.slice(2).trim() : file.replace(/\.md$/, '');
-        plans.push({ filename: file, title, modified: stat.mtime.toISOString() });
-      } catch {}
+    for (const { dir, project } of dirs) {
+      if (!fs.existsSync(dir)) continue;
+      let files = [];
+      try { files = fs.readdirSync(dir).filter(f => f.endsWith('.md')); } catch { continue; }
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        try {
+          const stat = fs.statSync(filePath);
+          const content = fs.readFileSync(filePath, 'utf8');
+          const firstLine = content.split('\n').find(l => l.trim());
+          const title = firstLine && firstLine.startsWith('# ')
+            ? firstLine.slice(2).trim() : file.replace(/\.md$/, '');
+          plans.push({ filename: file, path: filePath, project, title, modified: stat.mtime.toISOString() });
+        } catch {}
+      }
     }
     plans.sort((a, b) => new Date(b.modified) - new Date(a.modified));
     try {
       deleteSearchType('plan');
       upsertSearchEntries(plans.map(p => ({
-        id: p.filename, type: 'plan', folder: null,
+        id: p.path, type: 'plan', folder: null,
         title: p.title,
-        body: fs.readFileSync(path.join(PLANS_DIR, p.filename), 'utf8'),
+        body: fs.readFileSync(p.path, 'utf8'),
       })));
     } catch {}
-    return plans;
-  } catch (err) { log.error('get-plans:', err); return []; }
+    return { plans, dirs: dirs.map(d => d.dir) };
+  } catch (err) { log.error('get-plans:', err); return { plans: [], dirs: dirs.map(d => d.dir) }; }
 }
 
-function handleReadPlan(filename) {
+function handleReadPlan(target) {
   try {
-    const filePath = path.join(PLANS_DIR, path.basename(filename));
+    const filePath = resolvePlanPath(target, currentPlansDirs());
+    if (!filePath) return { content: '', filePath: '', error: 'path outside plans directories' };
     return { content: fs.readFileSync(filePath, 'utf8'), filePath };
   } catch (err) { return { content: '', filePath: '' }; }
 }
 
 function handleSavePlan(filePath, content) {
   try {
-    const resolved = path.resolve(filePath);
-    if (!resolved.startsWith(PLANS_DIR)) return { ok: false, error: 'path outside plans directory' };
+    const resolved = resolvePlanPath(filePath, currentPlansDirs());
+    if (!resolved) return { ok: false, error: 'path outside plans directories' };
     fs.writeFileSync(resolved, content, 'utf8');
     return { ok: true };
   } catch (err) { return { ok: false, error: err.message }; }

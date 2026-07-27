@@ -13,8 +13,14 @@ let currentMemoryContent = "";
 const memoryCollapsedState = new Map();
 
 // --- Plans ---
+// Directories get-plans actually scanned, so the empty state can name them
+// instead of asserting a hardcoded path that may not even be the one in use.
+let cachedPlanDirs = [];
+
 async function loadPlans() {
-  cachedPlans = await window.api.getPlans();
+  const result = await window.api.getPlans();
+  cachedPlans = result.plans || [];
+  cachedPlanDirs = result.dirs || [];
   renderPlans();
 }
 
@@ -22,10 +28,7 @@ function renderPlans(plans) {
   plans = plans || cachedPlans;
   plansContent.innerHTML = '';
   if (plans.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'plans-empty';
-    empty.textContent = 'No plans found in ~/.claude/plans/';
-    plansContent.appendChild(empty);
+    plansContent.appendChild(buildPlansEmptyState());
     return;
   }
   for (const plan of plans) {
@@ -33,9 +36,55 @@ function renderPlans(plans) {
   }
 }
 
+// Claude Code writes a plan file only when you ask it to save one, and it obeys
+// the per-project plansDirectory setting. Both are worth saying: an empty tab
+// usually means no plan has been saved yet, not that anything is broken.
+function buildPlansEmptyState() {
+  const empty = document.createElement('div');
+  empty.className = 'plans-empty';
+
+  const title = document.createElement('div');
+  title.className = 'plans-empty-title';
+  title.textContent = 'No plans saved yet';
+  empty.appendChild(title);
+
+  const hint = document.createElement('div');
+  hint.className = 'plans-empty-hint';
+  hint.textContent = 'Claude Code writes a plan file when you save one from plan mode.';
+  empty.appendChild(hint);
+
+  const label = document.createElement('div');
+  label.className = 'plans-empty-hint';
+  label.textContent = cachedPlanDirs.length === 1 ? 'Directory searched:' : 'Directories searched:';
+  empty.appendChild(label);
+
+  const list = document.createElement('ul');
+  list.className = 'plans-empty-dirs';
+  const home = homeDirPrefix();
+  for (const dir of cachedPlanDirs) {
+    const li = document.createElement('li');
+    li.textContent = home && dir.startsWith(home) ? '~' + dir.slice(home.length) : dir;
+    list.appendChild(li);
+  }
+  empty.appendChild(list);
+  return empty;
+}
+
+// Best-effort home prefix so the listed directories stay readable. Derived from
+// a scanned path rather than an API call, since the default is always ~/.claude/plans.
+function homeDirPrefix() {
+  const first = cachedPlanDirs.find(d => d.includes('/.claude/plans') || d.includes('\\.claude\\plans'));
+  if (!first) return '';
+  const idx = first.lastIndexOf('/.claude/plans');
+  if (idx > 0) return first.slice(0, idx);
+  const widx = first.lastIndexOf('\\.claude\\plans');
+  return widx > 0 ? first.slice(0, widx) : '';
+}
+
 function buildPlanItem(plan) {
   const item = document.createElement('div');
   item.className = 'session-item plan-item';
+  if (plan.path) item.dataset.planPath = plan.path;
 
   const row = document.createElement('div');
   row.className = 'session-row';
@@ -57,6 +106,14 @@ function buildPlanItem(plan) {
 
   info.appendChild(titleEl);
   info.appendChild(filenameEl);
+  // Plans from a project's own plansDirectory need saying which project, since
+  // the same filename can exist in several of them.
+  if (plan.project) {
+    const projectEl = document.createElement('span');
+    projectEl.className = 'plan-project-badge';
+    projectEl.textContent = plan.project;
+    metaEl.appendChild(projectEl);
+  }
   info.appendChild(metaEl);
   row.appendChild(info);
   item.appendChild(row);
@@ -66,16 +123,15 @@ function buildPlanItem(plan) {
 }
 
 async function openPlan(plan) {
-  // Mark active in sidebar
+  // Mark active in sidebar. Keyed on the full path, not the filename: the same
+  // plan name can now come from several projects and would highlight them all.
   plansContent.querySelectorAll('.plan-item.active').forEach(el => el.classList.remove('active'));
   const items = plansContent.querySelectorAll('.plan-item');
   items.forEach(el => {
-    if (el.querySelector('.session-id')?.textContent === plan.filename) {
-      el.classList.add('active');
-    }
+    if (el.dataset.planPath === plan.path) el.classList.add('active');
   });
 
-  const result = await window.api.readPlan(plan.filename);
+  const result = await window.api.readPlan(plan.path || plan.filename);
   currentPlanContent = result.content;
   currentPlanFilePath = result.filePath;
   currentPlanFilename = plan.filename;

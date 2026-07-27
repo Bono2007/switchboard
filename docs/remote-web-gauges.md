@@ -173,6 +173,23 @@ Two fixes were needed on top of #58 for it to help remote sessions at all:
 
 ---
 
+## The Plans tab and `plansDirectory`
+
+Claude Code describes its own setting as *"Custom directory for plan files, relative to project root. If not set, defaults to `~/.claude/plans/`"*. So there is no single plans folder — each project can redirect elsewhere, and the shared directory is only the fallback.
+
+Switchboard used to read the fallback and nothing else, from a hardcoded constant. Any project that set `plansDirectory` had its plans silently hidden, and the empty state claimed `No plans found in ~/.claude/plans/` even when that wasn't the directory in use.
+
+Now the Plans tab scans the shared directory plus the resolved `plansDirectory` of every known local project, following Claude Code's own precedence: project `settings.local.json`, then project `settings.json`, then user `settings.json`. Plans coming from a project's own directory carry a badge naming that project. Remote projects are skipped — their plans live on the other machine.
+
+Two consequences worth knowing:
+
+- Plans are indexed for search under their **full path**, since the same filename can now exist in several projects.
+- Read and write are restricted to the known plans directories, checked with `path.relative` rather than a string prefix. The old `startsWith` check would have accepted `~/.claude/plans-evil/…`.
+
+If the tab is empty, it now lists the directories it actually searched. An empty tab usually means no plan has been saved yet: Claude Code writes a plan file only when you save one from plan mode.
+
+---
+
 ## Remote hosts: the PATH trap
 
 A remote session runs your command through the remote **login shell** (`${SHELL:-bash} -l -i -c …`). Originally this was a hardcoded `bash`, which breaks on any host whose login shell is zsh — the macOS default since Catalina — because everything set up in `~/.zshrc` is invisible to bash:

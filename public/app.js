@@ -511,8 +511,10 @@ searchInput.addEventListener('input', () => {
         refreshSidebar({ resort: true });
       } else if (activeTab === 'plans') {
         const results = await window.api.search('plan', query, searchTitlesOnly);
+        // Indexed under the full path now that a filename is no longer unique
+        // across projects.
         const matchIds = new Set(results.map(r => r.id));
-        renderPlans(cachedPlans.filter(p => matchIds.has(p.filename)));
+        renderPlans(cachedPlans.filter(p => matchIds.has(p.path)));
       } else if (activeTab === 'memory') {
         const results = await window.api.search('memory', query, searchTitlesOnly);
         const matchIds = new Set(results.map(r => r.id));
