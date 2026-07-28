@@ -6,6 +6,7 @@ const { deriveProjectPath } = require('./derive-project-path');
 const { readSessionFile } = require('./read-session-file');
 const { encodeProjectPath } = require('./encode-project-path');
 const { parseRemoteProjectPath } = require('./remote-hosts');
+const { foldersNeedingIndex } = require('./stale-folders');
 
 /**
  * Session cache module.
@@ -171,6 +172,19 @@ function populateCacheFromFilesystem() {
 
 /** Build projects response from cached data */
 function buildProjectsFromCache(showArchived) {
+  // Heal folders that were registered by the backfill below but never indexed —
+  // they render as a project with nothing under it, which looks like a broken
+  // disclosure arrow. A few per call, so a long backlog does not stall the UI;
+  // indexing one stores a real mtime, so each folder is only ever done once.
+  for (const folder of foldersNeedingIndex(getAllFolderMeta())) {
+    try {
+      refreshFolder(folder);
+    } catch (err) {
+      // Never let one unreadable folder take the whole sidebar down.
+      log?.error?.(`[cache] could not index ${folder}: ${err.message}`);
+    }
+  }
+
   const metaMap = getAllMeta();
   const cachedRows = getAllCached();
   const global = getSetting('global') || {};
